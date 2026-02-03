@@ -1,0 +1,8 @@
+Γò╖
+Γöé Error: No configuration files
+Γöé 
+Γöé Apply requires configuration to be present. Applying without a
+Γöé configuration would mark everything for destruction, which is normally not
+Γöé what is desired. If you would like to destroy everything, run 'terraform
+Γöé destroy' instead.
+Γò╡
