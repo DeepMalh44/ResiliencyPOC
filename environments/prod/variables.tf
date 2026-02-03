@@ -472,7 +472,33 @@ variable "enable_function_apps" {
   default     = true
 }
 
+#--------------------------------------------------------------
+# Automated DR Failover Configuration
+#--------------------------------------------------------------
 
+variable "enable_automated_failover" {
+  description = "Enable Azure Automation for automated DR failover triggered by alerts"
+  type        = bool
+  default     = false
+}
+
+variable "enable_redis" {
+  description = "Enable Redis Cache deployment"
+  type        = bool
+  default     = true
+}
+
+variable "enable_front_door" {
+  description = "Enable Azure Front Door deployment"
+  type        = bool
+  default     = true
+}
+
+variable "subscription_id" {
+  description = "Azure subscription ID (used for activity log alert scopes)"
+  type        = string
+  default     = ""
+}
 
 #--------------------------------------------------------------
 # Secondary Region Zone Configuration

@@ -67,3 +67,21 @@ output "activity_log_alerts" {
   }
 }
 
+#------------------------------------------------------------------------------
+# DR Alert Outputs
+#------------------------------------------------------------------------------
+
+output "dr_action_group_id" {
+  description = "ID of the DR failover action group"
+  value       = var.enable_dr_alerts ? azurerm_monitor_action_group.dr_failover[0].id : null
+}
+
+output "dr_action_group_name" {
+  description = "Name of the DR failover action group"
+  value       = var.enable_dr_alerts ? azurerm_monitor_action_group.dr_failover[0].name : null
+}
+
+output "dr_alerts_enabled" {
+  description = "Whether DR alerts are enabled"
+  value       = var.enable_dr_alerts
+}

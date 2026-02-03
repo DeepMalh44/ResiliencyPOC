@@ -236,6 +236,30 @@ module "monitoring" {
     }
   }
 
+  # DR Alerts Configuration (populated after automation module is created)
+  enable_dr_alerts = var.enable_automated_failover
+  
+  dr_alert_email_receivers = [
+    for email in var.alert_email_addresses : {
+      name          = replace(email, "@", "-at-")
+      email_address = email
+    }
+  ]
+  
+  # Note: Webhook URI will be empty on first apply before automation module exists
+  # This is handled by the conditional in the monitoring module
+  dr_webhook_uri = ""
+  
+  subscription_id = "/subscriptions/${var.subscription_id}"
+  
+  # Resource IDs for DR monitoring - these will be empty initially
+  sql_mi_resource_id       = ""
+  app_service_resource_ids = []
+  redis_cache_resource_id  = ""
+  front_door_resource_id   = ""
+  
+  dr_monitored_regions = ["East US 2", "Central US"]
+
   tags = local.common_tags
 }
 
@@ -1049,3 +1073,80 @@ resource "azurerm_role_assignment" "app_secondary_storage" {
   principal_id         = module.app_service_secondary.identity_principal_id
 }
 
+#--------------------------------------------------------------
+# Azure Automation Account for DR Failover
+#--------------------------------------------------------------
+
+module "automation" {
+  source = "../../modules/automation"
+  count  = var.enable_automated_failover ? 1 : 0
+
+  automation_account_name = local.automation_account_name
+  location                = local.regions.primary.name
+  resource_group_name     = module.resource_group_primary.name
+  resource_group_id       = module.resource_group_primary.id
+
+  # Secondary region for cross-region failover permissions
+  secondary_resource_group_id = module.resource_group_secondary.id
+
+  # SQL MI role assignment (when SQL MI is deployed)
+  sql_mi_id = var.enable_sql_mi ? module.sql_mi_primary[0].id : ""
+
+  # Redis role assignment (when Redis is deployed)
+  redis_cache_id = var.enable_redis ? module.redis_primary[0].id : ""
+
+  # Runbook configuration
+  runbook_name    = "Invoke-DRFailover"
+  runbook_content = file("${path.module}/../../modules/automation/scripts/Invoke-DRFailover.ps1")
+
+  # Webhook expiry (3 years from now)
+  webhook_expiry_time = timeadd(timestamp(), "26280h")
+
+  # Diagnostics
+  log_analytics_workspace_id = module.monitoring.log_analytics_workspace_id
+
+  tags = local.common_tags
+}
+
+#--------------------------------------------------------------
+# Update Monitoring Module with DR Alerts
+#--------------------------------------------------------------
+
+# Note: The monitoring module already exists above. 
+# Add these DR-specific configurations to the module call above,
+# or use a separate monitoring_dr module if needed.
+
+# For now, we'll add a locals block to define DR alert resources
+# that can be passed to the monitoring module
+
+locals {
+  # DR Alert Configuration
+  dr_alert_config = {
+    enable_dr_alerts = var.enable_automated_failover
+    
+    dr_alert_email_receivers = [
+      for email in var.alert_email_addresses : {
+        name          = replace(email, "@", "-at-")
+        email_address = email
+      }
+    ]
+    
+    # Webhook URI from automation module
+    dr_webhook_uri = var.enable_automated_failover ? module.automation[0].webhook_uri : ""
+    
+    # Subscription ID for activity log alerts
+    subscription_id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}"
+    
+    # Resource IDs for monitoring (conditionally populated)
+    sql_mi_resource_id       = var.enable_sql_mi ? module.sql_mi_primary[0].id : ""
+    app_service_resource_ids = [module.app_service_primary.id]
+    redis_cache_resource_id  = var.enable_redis ? module.redis_primary[0].id : ""
+    front_door_resource_id   = var.enable_front_door ? module.front_door[0].id : ""
+    
+    # Monitored regions
+    dr_monitored_regions = [local.regions.primary.name, local.regions.secondary.name]
+  }
+}
+
+# Data source for subscription info
+data "azurerm_subscription" "current" {}

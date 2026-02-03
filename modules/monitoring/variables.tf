@@ -127,3 +127,89 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+#------------------------------------------------------------------------------
+# DR Alert Variables
+#------------------------------------------------------------------------------
+
+variable "enable_dr_alerts" {
+  description = "Enable DR-specific alerts that can trigger automated failover"
+  type        = bool
+  default     = false
+}
+
+variable "dr_action_group_name" {
+  description = "Name of the action group for DR failover alerts"
+  type        = string
+  default     = "ag-dr-failover"
+}
+
+variable "dr_alert_email_receivers" {
+  description = "Email receivers for DR alerts"
+  type = list(object({
+    name          = string
+    email_address = string
+  }))
+  default = []
+}
+
+variable "dr_webhook_uri" {
+  description = "Webhook URI for triggering DR failover runbook"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "dr_automation_account_id" {
+  description = "Resource ID of the Automation Account for DR failover"
+  type        = string
+  default     = ""
+}
+
+variable "dr_runbook_name" {
+  description = "Name of the DR failover runbook"
+  type        = string
+  default     = "Invoke-DRFailover"
+}
+
+variable "dr_webhook_resource_id" {
+  description = "Resource ID of the webhook for DR failover"
+  type        = string
+  default     = ""
+}
+
+variable "subscription_id" {
+  description = "Azure subscription ID for activity log alert scopes"
+  type        = string
+  default     = ""
+}
+
+variable "sql_mi_resource_id" {
+  description = "Resource ID of the SQL Managed Instance for DR alerts"
+  type        = string
+  default     = ""
+}
+
+variable "app_service_resource_ids" {
+  description = "List of App Service resource IDs for DR alerts"
+  type        = list(string)
+  default     = []
+}
+
+variable "redis_cache_resource_id" {
+  description = "Resource ID of the Redis Cache for DR alerts"
+  type        = string
+  default     = ""
+}
+
+variable "front_door_resource_id" {
+  description = "Resource ID of the Front Door profile for DR alerts"
+  type        = string
+  default     = ""
+}
+
+variable "dr_monitored_regions" {
+  description = "Azure regions to monitor for service health incidents"
+  type        = list(string)
+  default     = ["East US 2", "Central US"]
+}

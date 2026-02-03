@@ -85,6 +85,9 @@ locals {
   appi_names = {
     for region_key, region in local.regions : region_key => "appi-${local.project_name}-${local.environment}-${region.short}"
   }
+  
+  # Automation Account name for DR failover
+  automation_account_name = "aa-${local.project_name}-${local.environment}-dr"
 
   # Availability Zones
   availability_zones           = ["1", "2", "3"]
