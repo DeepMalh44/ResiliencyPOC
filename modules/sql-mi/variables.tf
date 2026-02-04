@@ -12,6 +12,11 @@ variable "resource_group_name" {
   type        = string
 }
 
+variable "resource_group_id" {
+  description = "Resource Group ID for parent_id (prevents unnecessary replacements)"
+  type        = string
+}
+
 variable "location" {
   description = "Azure region for the SQL MI"
   type        = string
@@ -85,7 +90,7 @@ variable "public_data_endpoint_enabled" {
 variable "proxy_override" {
   description = "Proxy override (Default, Proxy, or Redirect). Azure SQL MI uses 'Redirect' by default for better performance."
   type        = string
-  default     = "Redirect"  # Redirect is Azure's default for better performance within VNet
+  default     = "Redirect" # Redirect is Azure's default for better performance within VNet
 }
 
 variable "timezone_id" {
@@ -97,7 +102,7 @@ variable "timezone_id" {
 variable "backup_storage_redundancy" {
   description = "Backup storage redundancy type (Geo, Local, Zone, GeoZone). Using Local for POC."
   type        = string
-  default     = "Local"  # Local (LRS) for POC - simplest option, no cross-region complexity
+  default     = "Local" # Local (LRS) for POC - simplest option, no cross-region complexity
 }
 
 variable "maintenance_configuration_name" {
@@ -163,7 +168,7 @@ variable "failover_mode" {
 variable "grace_period_minutes" {
   description = "Grace period in minutes before failover (aligns with RTO)"
   type        = number
-  default     = 60  # 1 hour = your RTO
+  default     = 60 # 1 hour = your RTO
 }
 
 #--------------------------------------------------------------

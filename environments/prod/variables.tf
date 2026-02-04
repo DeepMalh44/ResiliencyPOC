@@ -434,6 +434,18 @@ variable "enable_sql_mi" {
   default     = true
 }
 
+variable "enable_sql_mi_secondary" {
+  description = "Enable secondary SQL MI deployment (disable to save vCore quota)"
+  type        = bool
+  default     = true
+}
+
+variable "create_sql_mi_failover_group" {
+  description = "Create SQL MI failover group (set to true only after both SQL MIs are deployed)"
+  type        = bool
+  default     = false
+}
+
 variable "enable_storage" {
   description = "Enable Storage Account deployment (disable if policy blocks key-based auth)"
   type        = bool
@@ -513,13 +525,13 @@ variable "secondary_zone_redundant" {
 variable "sql_mi_secondary_zone_redundant" {
   description = "Enable zone redundancy for SQL MI in secondary region. May need to be disabled separately if SQL MI zone redundancy is not available."
   type        = bool
-  default     = null  # When null, falls back to secondary_zone_redundant
+  default     = null # When null, falls back to secondary_zone_redundant
 }
 
 variable "secondary_storage_replication_type" {
   description = "Storage replication type for secondary region. Use GRS/LRS for regions without AZ support (e.g., West US)"
   type        = string
-  default     = "GRS"  # Geo-redundant storage (no zone redundancy required)
+  default     = "GRS" # Geo-redundant storage (no zone redundancy required)
 
   validation {
     condition     = contains(["RAGZRS", "GZRS", "ZRS", "GRS", "RAGRS", "LRS"], var.secondary_storage_replication_type)

@@ -46,7 +46,7 @@ variable "origin_groups" {
 variable "origins" {
   description = "Map of origins (backend servers)"
   type = map(object({
-    origin_group_key              = string
+    origin_group_key               = string
     enabled                        = optional(bool, true)
     certificate_name_check_enabled = optional(bool, true)
     host_name                      = string
@@ -86,9 +86,9 @@ variable "custom_domains" {
 variable "routes" {
   description = "Map of routes"
   type = map(object({
-    endpoint_key          = string
-    origin_group_key      = string
-    origin_keys           = list(string)
+    endpoint_key           = string
+    origin_group_key       = string
+    origin_keys            = list(string)
     enabled                = optional(bool, true)
     forwarding_protocol    = optional(string, "HttpsOnly")
     https_redirect_enabled = optional(bool, true)

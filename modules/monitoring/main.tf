@@ -30,7 +30,7 @@ resource "azurerm_application_insights" "this" {
   application_type    = each.value.application_type
   retention_in_days   = each.value.retention_in_days
   sampling_percentage = each.value.sampling_percentage
-  
+
   disable_ip_masking = each.value.disable_ip_masking
 
   tags = var.tags

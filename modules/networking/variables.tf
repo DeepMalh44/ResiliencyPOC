@@ -31,12 +31,12 @@ variable "dns_servers" {
 variable "subnets" {
   description = "Map of subnet configurations"
   type = map(object({
-    address_prefixes = list(string)
-    service_endpoints                           = optional(list(string), [])
-    private_endpoint_network_policies           = optional(string, "Enabled")
+    address_prefixes                              = list(string)
+    service_endpoints                             = optional(list(string), [])
+    private_endpoint_network_policies             = optional(string, "Enabled")
     private_link_service_network_policies_enabled = optional(bool, true)
-    create_nsg                                  = optional(bool, true)
-    is_sqlmi_subnet                             = optional(bool, false)
+    create_nsg                                    = optional(bool, true)
+    is_sqlmi_subnet                               = optional(bool, false)
     delegation = optional(object({
       name    = string
       actions = list(string)
@@ -54,16 +54,16 @@ variable "private_dns_zones" {
   description = "Map of private DNS zones to create"
   type        = map(string)
   default = {
-    keyvault      = "privatelink.vaultcore.azure.net"
-    blob          = "privatelink.blob.core.windows.net"
-    file          = "privatelink.file.core.windows.net"
-    queue         = "privatelink.queue.core.windows.net"
-    table         = "privatelink.table.core.windows.net"
-    sqlmi         = "privatelink.database.windows.net"
-    redis         = "privatelink.redis.cache.windows.net"
-    apim          = "privatelink.azure-api.net"
-    webapp        = "privatelink.azurewebsites.net"
-    monitor       = "privatelink.monitor.azure.com"
+    keyvault = "privatelink.vaultcore.azure.net"
+    blob     = "privatelink.blob.core.windows.net"
+    file     = "privatelink.file.core.windows.net"
+    queue    = "privatelink.queue.core.windows.net"
+    table    = "privatelink.table.core.windows.net"
+    sqlmi    = "privatelink.database.windows.net"
+    redis    = "privatelink.redis.cache.windows.net"
+    apim     = "privatelink.azure-api.net"
+    webapp   = "privatelink.azurewebsites.net"
+    monitor  = "privatelink.monitor.azure.com"
   }
 }
 

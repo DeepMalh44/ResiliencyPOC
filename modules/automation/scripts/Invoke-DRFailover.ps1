@@ -63,7 +63,7 @@ param(
 # Format: {resource_type}-{project_name}-{environment}-{region_short}
 $defaultConfig = @{
     # Project identification (should match var.project_name and var.environment)
-    ProjectName = "pocapp2"      # UPDATE: Match your var.project_name
+    ProjectName = "pocapp5"      # UPDATE: Match your var.project_name
     Environment = "prod"          # UPDATE: Match your var.environment
     
     # Primary Region Configuration

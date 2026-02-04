@@ -76,13 +76,13 @@ variable "action_groups" {
 variable "metric_alerts" {
   description = "Map of metric alerts to create"
   type = map(object({
-    scopes            = list(string)
-    description       = optional(string)
-    severity          = optional(number, 3)
-    enabled           = optional(bool, true)
-    frequency         = optional(string, "PT5M")
-    window_size       = optional(string, "PT15M")
-    auto_mitigate     = optional(bool, true)
+    scopes             = list(string)
+    description        = optional(string)
+    severity           = optional(number, 3)
+    enabled            = optional(bool, true)
+    frequency          = optional(string, "PT5M")
+    window_size        = optional(string, "PT15M")
+    auto_mitigate      = optional(bool, true)
     action_group_names = optional(list(string))
     criteria = optional(list(object({
       metric_namespace = string
@@ -103,9 +103,9 @@ variable "metric_alerts" {
 variable "activity_log_alerts" {
   description = "Map of activity log alerts to create"
   type = map(object({
-    scopes            = list(string)
-    description       = optional(string)
-    enabled           = optional(bool, true)
+    scopes             = list(string)
+    description        = optional(string)
+    enabled            = optional(bool, true)
     action_group_names = optional(list(string))
     criteria = object({
       category       = string

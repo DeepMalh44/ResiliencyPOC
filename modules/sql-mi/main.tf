@@ -24,7 +24,7 @@ resource "azapi_resource" "managed_instance" {
   type      = "Microsoft.Sql/managedInstances@2023-08-01-preview"
   name      = var.name
   location  = var.location
-  parent_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  parent_id = var.resource_group_id
 
   identity {
     type = "SystemAssigned"
@@ -38,18 +38,20 @@ resource "azapi_resource" "managed_instance" {
     }
     properties = merge(
       {
-        subnetId                   = var.subnet_id
-        licenseType                = var.license_type
-        vCores                     = var.vcores
-        storageSizeInGB            = var.storage_size_in_gb
-        collation                  = var.collation
-        timezoneId                 = var.timezone_id
-        minimalTlsVersion          = var.minimum_tls_version
-        publicDataEndpointEnabled  = var.public_data_endpoint_enabled
-        proxyOverride              = var.proxy_override
+        subnetId                  = var.subnet_id
+        licenseType               = var.license_type
+        vCores                    = var.vcores
+        storageSizeInGB           = var.storage_size_in_gb
+        collation                 = var.collation
+        timezoneId                = var.timezone_id
+        minimalTlsVersion         = var.minimum_tls_version
+        publicDataEndpointEnabled = var.public_data_endpoint_enabled
+        proxyOverride             = var.proxy_override
         # When zone_redundant is true, backup storage must also be Zone-redundant
         requestedBackupStorageRedundancy = var.zone_redundant ? "Zone" : var.backup_storage_redundancy
-        zoneRedundant              = var.zone_redundant
+        zoneRedundant                    = var.zone_redundant
+        # For failover groups, secondary must be in same DNS zone as primary
+        dnsZonePartner = var.dns_zone_partner_id
 
         # Azure AD Administrator with AAD-only authentication at creation time
         administrators = {
@@ -98,9 +100,11 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
 
 #--------------------------------------------------------------
 # Failover Group (created on primary only)
+# Note: count uses only create_failover_group variable (known at plan time)
+# partner_managed_instance_id is validated at apply time
 #--------------------------------------------------------------
 resource "azurerm_mssql_managed_instance_failover_group" "this" {
-  count = var.create_failover_group && var.partner_managed_instance_id != null ? 1 : 0
+  count = var.create_failover_group ? 1 : 0
 
   name                        = var.failover_group_name
   location                    = var.location
@@ -111,4 +115,6 @@ resource "azurerm_mssql_managed_instance_failover_group" "this" {
     mode          = "Automatic"
     grace_minutes = var.grace_period_minutes
   }
+
+  depends_on = [azapi_resource.managed_instance]
 }

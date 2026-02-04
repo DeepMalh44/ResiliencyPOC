@@ -5,11 +5,11 @@
 resource "azurerm_cdn_frontdoor_firewall_policy" "this" {
   count = var.enable_waf ? 1 : 0
 
-  name                              = var.waf_policy_name
-  resource_group_name               = var.resource_group_name
-  sku_name                          = var.sku_name
-  enabled                           = true
-  mode                              = var.waf_mode  # Prevention or Detection
+  name                = var.waf_policy_name
+  resource_group_name = var.resource_group_name
+  sku_name            = var.sku_name
+  enabled             = true
+  mode                = var.waf_mode # Prevention or Detection
 
   # Managed Rules (OWASP)
   dynamic "managed_rule" {

@@ -4,23 +4,23 @@
 #--------------------------------------------------------------
 
 resource "azurerm_redis_cache" "this" {
-  name                          = var.name
-  location                      = var.location
-  resource_group_name           = var.resource_group_name
-  capacity                      = var.capacity
-  family                        = var.family
-  sku_name                      = var.sku_name  # Premium required for zones
-  
+  name                = var.name
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  capacity            = var.capacity
+  family              = var.family
+  sku_name            = var.sku_name # Premium required for zones
+
   # CRITICAL: Zone redundancy (Premium tier only)
   zones = var.zones
-  
+
   # Network settings
   public_network_access_enabled = var.public_network_access_enabled
-  
+
   # Redis settings
-  non_ssl_port_enabled           = false
-  minimum_tls_version           = var.minimum_tls_version
-  
+  non_ssl_port_enabled = false
+  minimum_tls_version  = var.minimum_tls_version
+
   # Redis configuration
   redis_configuration {
     maxmemory_reserved              = var.maxmemory_reserved

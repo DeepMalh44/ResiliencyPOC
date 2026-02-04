@@ -26,7 +26,7 @@ variable "account_tier" {
 variable "account_replication_type" {
   description = "Storage account replication type (LRS, GRS, RAGRS, ZRS, GZRS, RAGZRS)"
   type        = string
-  default     = "RAGZRS"  # Zone + Geo redundancy with read access
+  default     = "RAGZRS" # Zone + Geo redundancy with read access
 }
 
 variable "account_kind" {

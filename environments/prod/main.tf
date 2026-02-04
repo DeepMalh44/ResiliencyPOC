@@ -80,8 +80,8 @@ module "networking_primary" {
       address_prefixes = [local.subnet_config.primary.private_endpoints]
     }
     "snet-sqlmi" = {
-      address_prefixes  = [local.subnet_config.primary.sql_mi]
-      is_sqlmi_subnet   = true  # Required for Route Table creation
+      address_prefixes = [local.subnet_config.primary.sql_mi]
+      is_sqlmi_subnet  = true # Required for Route Table creation
       delegation = {
         name = "Microsoft.Sql/managedInstances"
         actions = [
@@ -140,8 +140,8 @@ module "networking_secondary" {
       address_prefixes = [local.subnet_config.secondary.private_endpoints]
     }
     "snet-sqlmi" = {
-      address_prefixes  = [local.subnet_config.secondary.sql_mi]
-      is_sqlmi_subnet   = true  # Required for Route Table creation
+      address_prefixes = [local.subnet_config.secondary.sql_mi]
+      is_sqlmi_subnet  = true # Required for Route Table creation
       delegation = {
         name = "Microsoft.Sql/managedInstances"
         actions = [
@@ -238,26 +238,26 @@ module "monitoring" {
 
   # DR Alerts Configuration (populated after automation module is created)
   enable_dr_alerts = var.enable_automated_failover
-  
+
   dr_alert_email_receivers = [
     for email in var.alert_email_addresses : {
       name          = replace(email, "@", "-at-")
       email_address = email
     }
   ]
-  
+
   # Note: Webhook URI will be empty on first apply before automation module exists
   # This is handled by the conditional in the monitoring module
   dr_webhook_uri = ""
-  
+
   subscription_id = "/subscriptions/${var.subscription_id}"
-  
+
   # Resource IDs for DR monitoring - these will be empty initially
   sql_mi_resource_id       = ""
   app_service_resource_ids = []
   redis_cache_resource_id  = ""
   front_door_resource_id   = ""
-  
+
   dr_monitored_regions = ["East US 2", "Central US"]
 
   tags = local.common_tags
@@ -345,7 +345,7 @@ module "storage_primary" {
 
   min_tls_version                 = "TLS1_2"
   allow_nested_items_to_be_public = false
-  shared_access_key_enabled       = false  # RBAC-only authentication (key-based auth disabled)
+  shared_access_key_enabled       = false # RBAC-only authentication (key-based auth disabled)
   default_to_oauth_authentication = true
 
   network_rules = {
@@ -390,11 +390,11 @@ module "storage_secondary" {
   resource_group_name      = module.resource_group_secondary.name
   location                 = local.regions.secondary.name
   account_tier             = var.storage_account_tier
-  account_replication_type = var.secondary_storage_replication_type  # GRS for West US (no ZRS support)
+  account_replication_type = var.secondary_storage_replication_type # GRS for West US (no ZRS support)
 
   min_tls_version                 = "TLS1_2"
   allow_nested_items_to_be_public = false
-  shared_access_key_enabled       = false  # RBAC-only authentication (key-based auth disabled)
+  shared_access_key_enabled       = false # RBAC-only authentication (key-based auth disabled)
   default_to_oauth_authentication = true
 
   network_rules = {
@@ -433,6 +433,9 @@ module "storage_secondary" {
 
 #--------------------------------------------------------------
 # SQL Managed Instance - Both Regions with Failover Group
+# Note: Primary is created first, then secondary with DNS zone partner.
+# Failover group is disabled during initial deployment to avoid cycle.
+# After both SQL MIs are deployed, enable create_failover_group.
 #--------------------------------------------------------------
 
 module "sql_mi_primary" {
@@ -441,6 +444,7 @@ module "sql_mi_primary" {
 
   name                   = local.sqlmi_names.primary
   resource_group_name    = module.resource_group_primary.name
+  resource_group_id      = module.resource_group_primary.id
   location               = local.regions.primary.name
   subnet_id              = module.networking_primary.subnet_ids["snet-sqlmi"]
   sku_name               = var.sql_mi_sku_name
@@ -449,32 +453,31 @@ module "sql_mi_primary" {
   storage_size_in_gb     = var.sql_mi_storage_size_gb
   administrator_login    = var.sql_mi_administrator_login
   administrator_password = var.sql_mi_administrator_password
-  zone_redundant         = false  # Simplified for POC
+  zone_redundant         = false # Simplified for POC
 
   # Azure AD Authentication
   azure_ad_admin_login        = var.sql_mi_azure_ad_admin_login
   azure_ad_admin_object_id    = var.sql_mi_azure_ad_admin_object_id
   azure_ad_admin_tenant_id    = var.sql_mi_azure_ad_admin_tenant_id
   azuread_authentication_only = var.sql_mi_azuread_authentication_only
-  minimum_tls_version    = var.minimum_tls_version
+  minimum_tls_version         = var.minimum_tls_version
 
-  # Failover Group - Primary is the partner
-  create_failover_group        = false  # Set to true after both SQL MIs are created
-  failover_group_name          = "fog-${local.project_name}-${local.environment}"
-  partner_managed_instance_id  = var.enable_sql_mi ? module.sql_mi_secondary[0].id : null
-  grace_period_minutes         = var.sql_mi_failover_grace_period_minutes
+  # Failover Group - Created separately in main.tf to avoid circular dependency
+  create_failover_group       = false
+  failover_group_name         = "fog-${local.project_name}-${local.environment}"
+  partner_managed_instance_id = null
+  grace_period_minutes        = var.sql_mi_failover_grace_period_minutes
 
   tags = local.common_tags
-
-  depends_on = [module.sql_mi_secondary]
 }
 
 module "sql_mi_secondary" {
-  count  = var.enable_sql_mi ? 1 : 0
+  count  = var.enable_sql_mi && var.enable_sql_mi_secondary ? 1 : 0
   source = "../../modules/sql-mi"
 
   name                   = local.sqlmi_names.secondary
   resource_group_name    = module.resource_group_secondary.name
+  resource_group_id      = module.resource_group_secondary.id
   location               = local.regions.secondary.name
   subnet_id              = module.networking_secondary.subnet_ids["snet-sqlmi"]
   sku_name               = var.sql_mi_sku_name
@@ -484,19 +487,44 @@ module "sql_mi_secondary" {
   administrator_login    = var.sql_mi_administrator_login
   administrator_password = var.sql_mi_administrator_password
   # Use dedicated SQL MI zone redundancy variable if set, otherwise fall back to secondary_zone_redundant
-  zone_redundant         = coalesce(var.sql_mi_secondary_zone_redundant, var.secondary_zone_redundant)
+  zone_redundant = coalesce(var.sql_mi_secondary_zone_redundant, var.secondary_zone_redundant)
+
+  # DNS Zone Partner - must be same DNS zone as primary for failover groups
+  dns_zone_partner_id = module.sql_mi_primary[0].id
 
   # Azure AD Authentication
   azure_ad_admin_login        = var.sql_mi_azure_ad_admin_login
   azure_ad_admin_object_id    = var.sql_mi_azure_ad_admin_object_id
   azure_ad_admin_tenant_id    = var.sql_mi_azure_ad_admin_tenant_id
   azuread_authentication_only = var.sql_mi_azuread_authentication_only
-  minimum_tls_version    = var.minimum_tls_version
+  minimum_tls_version         = var.minimum_tls_version
 
   # Secondary does not create failover group
   create_failover_group = false
 
   tags = local.common_tags
+
+  depends_on = [module.sql_mi_primary]
+}
+
+#--------------------------------------------------------------
+# SQL MI Failover Group - Created separately to avoid circular dependency
+# Primary SQL MI hosts the failover group, referencing the secondary
+#--------------------------------------------------------------
+resource "azurerm_mssql_managed_instance_failover_group" "this" {
+  count = var.enable_sql_mi && var.enable_sql_mi_secondary ? 1 : 0
+
+  name                        = "fog-${local.project_name}-${local.environment}"
+  location                    = local.regions.primary.name
+  managed_instance_id         = module.sql_mi_primary[0].id
+  partner_managed_instance_id = module.sql_mi_secondary[0].id
+
+  read_write_endpoint_failover_policy {
+    mode          = "Automatic"
+    grace_minutes = var.sql_mi_failover_grace_period_minutes
+  }
+
+  depends_on = [module.sql_mi_primary, module.sql_mi_secondary]
 }
 
 #--------------------------------------------------------------
@@ -579,12 +607,12 @@ module "app_service_primary" {
 
   zone_balancing_enabled = true
   worker_count           = var.app_service_instance_count
-  
+
   # Autoscale
-  enable_autoscale   = true
-  min_capacity       = var.app_service_instance_count
-  max_capacity       = var.app_service_max_instances
-  default_capacity   = var.app_service_instance_count
+  enable_autoscale = true
+  min_capacity     = var.app_service_instance_count
+  max_capacity     = var.app_service_max_instances
+  default_capacity = var.app_service_instance_count
 
   # Site config
   dotnet_version      = var.app_service_dotnet_version
@@ -629,14 +657,14 @@ module "app_service_secondary" {
   os_type  = "Windows"
   sku_name = var.app_service_sku
 
-  zone_balancing_enabled = var.secondary_zone_redundant  # Conditional based on secondary region support
+  zone_balancing_enabled = var.secondary_zone_redundant # Conditional based on secondary region support
   worker_count           = var.app_service_instance_count
-  
+
   # Autoscale
-  enable_autoscale   = true
-  min_capacity       = var.app_service_instance_count
-  max_capacity       = var.app_service_max_instances
-  default_capacity   = var.app_service_instance_count
+  enable_autoscale = true
+  min_capacity     = var.app_service_instance_count
+  max_capacity     = var.app_service_max_instances
+  default_capacity = var.app_service_instance_count
 
   # Site config
   dotnet_version      = var.app_service_dotnet_version
@@ -691,8 +719,8 @@ module "function_app_primary" {
   maximum_elastic_worker_count = var.function_app_max_instances
 
   # Runtime
-  runtime_name         = var.function_runtime
-  runtime_version      = var.function_runtime_version
+  runtime_name                = var.function_runtime
+  runtime_version             = var.function_runtime_version
   functions_extension_version = "~4"
 
   # Site config
@@ -735,12 +763,12 @@ module "function_app_secondary" {
   os_type  = "Windows"
   sku_name = var.function_app_sku
 
-  zone_balancing_enabled       = var.secondary_zone_redundant  # Zone redundancy based on region support
+  zone_balancing_enabled       = var.secondary_zone_redundant # Zone redundancy based on region support
   maximum_elastic_worker_count = var.function_app_max_instances
 
   # Runtime
-  runtime_name         = var.function_runtime
-  runtime_version      = var.function_runtime_version
+  runtime_name                = var.function_runtime
+  runtime_version             = var.function_runtime_version
   functions_extension_version = "~4"
 
   # Site config
@@ -827,14 +855,14 @@ module "front_door" {
   # Origins (backends) - Active-Active across regions
   origins = {
     "origin-webapp-primary" = {
-      origin_group_key          = "og-webapp"
-      host_name                 = module.app_service_primary.default_hostname
-      http_port                 = 80
-      https_port                = 443
-      origin_host_header        = module.app_service_primary.default_hostname
-      priority                  = 1
-      weight                    = 50
-      enabled                   = true
+      origin_group_key               = "og-webapp"
+      host_name                      = module.app_service_primary.default_hostname
+      http_port                      = 80
+      https_port                     = 443
+      origin_host_header             = module.app_service_primary.default_hostname
+      priority                       = 1
+      weight                         = 50
+      enabled                        = true
       certificate_name_check_enabled = true
       private_link = var.enable_private_endpoints ? {
         location               = local.regions.primary.name
@@ -844,14 +872,14 @@ module "front_door" {
       } : null
     }
     "origin-webapp-secondary" = {
-      origin_group_key          = "og-webapp"
-      host_name                 = module.app_service_secondary.default_hostname
-      http_port                 = 80
-      https_port                = 443
-      origin_host_header        = module.app_service_secondary.default_hostname
-      priority                  = 1
-      weight                    = 50
-      enabled                   = true
+      origin_group_key               = "og-webapp"
+      host_name                      = module.app_service_secondary.default_hostname
+      http_port                      = 80
+      https_port                     = 443
+      origin_host_header             = module.app_service_secondary.default_hostname
+      priority                       = 1
+      weight                         = 50
+      enabled                        = true
       certificate_name_check_enabled = true
       private_link = var.enable_private_endpoints ? {
         location               = local.regions.secondary.name
@@ -862,14 +890,14 @@ module "front_door" {
     }
     # APIM origin removed - add APIM module first
     "origin-func-primary" = {
-      origin_group_key          = "og-functions"
-      host_name                 = var.enable_function_apps && var.enable_storage ? module.function_app_primary[0].default_hostname : "placeholder.azurewebsites.net"
-      http_port                 = 80
-      https_port                = 443
-      origin_host_header        = var.enable_function_apps && var.enable_storage ? module.function_app_primary[0].default_hostname : "placeholder.azurewebsites.net"
-      priority                  = 1
-      weight                    = 50
-      enabled                   = true
+      origin_group_key               = "og-functions"
+      host_name                      = var.enable_function_apps && var.enable_storage ? module.function_app_primary[0].default_hostname : "placeholder.azurewebsites.net"
+      http_port                      = 80
+      https_port                     = 443
+      origin_host_header             = var.enable_function_apps && var.enable_storage ? module.function_app_primary[0].default_hostname : "placeholder.azurewebsites.net"
+      priority                       = 1
+      weight                         = 50
+      enabled                        = true
       certificate_name_check_enabled = true
       private_link = var.enable_private_endpoints && var.enable_function_apps && var.enable_storage ? {
         location               = local.regions.primary.name
@@ -879,14 +907,14 @@ module "front_door" {
       } : null
     }
     "origin-func-secondary" = {
-      origin_group_key          = "og-functions"
-      host_name                 = var.enable_function_apps && var.enable_storage ? module.function_app_secondary[0].default_hostname : "placeholder.azurewebsites.net"
-      http_port                 = 80
-      https_port                = 443
-      origin_host_header        = var.enable_function_apps && var.enable_storage ? module.function_app_secondary[0].default_hostname : "placeholder.azurewebsites.net"
-      priority                  = 1
-      weight                    = 50
-      enabled                   = true
+      origin_group_key               = "og-functions"
+      host_name                      = var.enable_function_apps && var.enable_storage ? module.function_app_secondary[0].default_hostname : "placeholder.azurewebsites.net"
+      http_port                      = 80
+      https_port                     = 443
+      origin_host_header             = var.enable_function_apps && var.enable_storage ? module.function_app_secondary[0].default_hostname : "placeholder.azurewebsites.net"
+      priority                       = 1
+      weight                         = 50
+      enabled                        = true
       certificate_name_check_enabled = true
       private_link = var.enable_private_endpoints && var.enable_function_apps && var.enable_storage ? {
         location               = local.regions.secondary.name
@@ -910,12 +938,12 @@ module "front_door" {
   # Routes
   routes = {
     "route-webapp" = {
-      endpoint_key         = "ep-webapp"
-      origin_group_key     = "og-webapp"
-      origin_keys          = ["origin-webapp-primary", "origin-webapp-secondary"]
-      patterns_to_match    = ["/*"]
-      supported_protocols  = ["Http", "Https"]
-      forwarding_protocol  = "HttpsOnly"
+      endpoint_key           = "ep-webapp"
+      origin_group_key       = "og-webapp"
+      origin_keys            = ["origin-webapp-primary", "origin-webapp-secondary"]
+      patterns_to_match      = ["/*"]
+      supported_protocols    = ["Http", "Https"]
+      forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
       link_to_default_domain = true
     }
@@ -1123,26 +1151,26 @@ locals {
   # DR Alert Configuration
   dr_alert_config = {
     enable_dr_alerts = var.enable_automated_failover
-    
+
     dr_alert_email_receivers = [
       for email in var.alert_email_addresses : {
         name          = replace(email, "@", "-at-")
         email_address = email
       }
     ]
-    
+
     # Webhook URI from automation module
     dr_webhook_uri = var.enable_automated_failover ? module.automation[0].webhook_uri : ""
-    
+
     # Subscription ID for activity log alerts
     subscription_id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}"
-    
+
     # Resource IDs for monitoring (conditionally populated)
     sql_mi_resource_id       = var.enable_sql_mi ? module.sql_mi_primary[0].id : ""
     app_service_resource_ids = [module.app_service_primary.id]
-    redis_cache_resource_id  = var.enable_redis ? module.redis_primary[0].id : ""
-    front_door_resource_id   = var.enable_front_door ? module.front_door[0].id : ""
-    
+    redis_cache_resource_id  = var.enable_redis ? module.redis_primary.redis_cache_id : ""
+    front_door_resource_id   = var.enable_front_door ? module.front_door.front_door_profile_id : ""
+
     # Monitored regions
     dr_monitored_regions = [local.regions.primary.name, local.regions.secondary.name]
   }

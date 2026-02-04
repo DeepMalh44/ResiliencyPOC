@@ -9,7 +9,7 @@ resource "azurerm_cdn_frontdoor_route" "routes" {
   cdn_frontdoor_endpoint_id     = azurerm_cdn_frontdoor_endpoint.endpoints[each.value.endpoint_key].id
   cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.groups[each.value.origin_group_key].id
   cdn_frontdoor_origin_ids      = [for o in each.value.origin_keys : azurerm_cdn_frontdoor_origin.origins[o].id]
-  
+
   enabled                = each.value.enabled
   forwarding_protocol    = each.value.forwarding_protocol
   https_redirect_enabled = each.value.https_redirect_enabled

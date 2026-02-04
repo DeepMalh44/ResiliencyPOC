@@ -21,14 +21,14 @@ resource "azurerm_storage_account" "this" {
   resource_group_name      = var.resource_group_name
   location                 = var.location
   account_tier             = var.account_tier
-  account_replication_type = var.account_replication_type  # RAGZRS for geo-zone redundancy
+  account_replication_type = var.account_replication_type # RAGZRS for geo-zone redundancy
   account_kind             = var.account_kind
 
   # Security settings
   min_tls_version                 = "TLS1_2"
   allow_nested_items_to_be_public = false
   public_network_access_enabled   = var.public_network_access_enabled
-  shared_access_key_enabled       = var.shared_access_key_enabled  # Disable for RBAC-only access
+  shared_access_key_enabled       = var.shared_access_key_enabled # Disable for RBAC-only access
   default_to_oauth_authentication = true
 
   # Enable infrastructure encryption

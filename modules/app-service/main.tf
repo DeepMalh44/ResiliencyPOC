@@ -7,11 +7,11 @@
 # App Service Plan
 #--------------------------------------------------------------
 resource "azurerm_service_plan" "this" {
-  name                   = var.app_service_plan_name
-  location               = var.location
-  resource_group_name    = var.resource_group_name
-  os_type                = var.os_type
-  sku_name               = var.sku_name
+  name                = var.app_service_plan_name
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  os_type             = var.os_type
+  sku_name            = var.sku_name
 
   # Zone balancing only for Premium/Standard tiers, not Free/Basic/Consumption
   zone_balancing_enabled = can(regex("^(P|S)[0-9]v[0-9]|^P[0-9]|^S[0-9]$", var.sku_name)) ? var.zone_balancing_enabled : false
@@ -35,16 +35,16 @@ resource "azurerm_windows_web_app" "this" {
   https_only                    = true
   public_network_access_enabled = var.enable_private_endpoint ? false : var.public_network_access_enabled
   # VNet integration not supported for Free/Shared tiers
-  virtual_network_subnet_id     = can(regex("^F[0-9]|^D[0-9]$", var.sku_name)) ? null : var.subnet_id
+  virtual_network_subnet_id = can(regex("^F[0-9]|^D[0-9]$", var.sku_name)) ? null : var.subnet_id
 
   site_config {
     # always_on not supported for Free/Shared tiers
-    always_on                = can(regex("^F[0-9]|^D[0-9]$", var.sku_name)) ? false : var.always_on
-    ftps_state               = var.ftps_state
-    http2_enabled            = var.http2_enabled
-    minimum_tls_version      = var.minimum_tls_version
-    vnet_route_all_enabled   = can(regex("^F[0-9]|^D[0-9]$", var.sku_name)) ? false : (var.subnet_id != null ? true : false)
-    health_check_path        = var.health_check_path
+    always_on              = can(regex("^F[0-9]|^D[0-9]$", var.sku_name)) ? false : var.always_on
+    ftps_state             = var.ftps_state
+    http2_enabled          = var.http2_enabled
+    minimum_tls_version    = var.minimum_tls_version
+    vnet_route_all_enabled = can(regex("^F[0-9]|^D[0-9]$", var.sku_name)) ? false : (var.subnet_id != null ? true : false)
+    health_check_path      = var.health_check_path
 
     application_stack {
       current_stack  = "dotnet"
@@ -80,16 +80,16 @@ resource "azurerm_linux_web_app" "this" {
   https_only                    = true
   public_network_access_enabled = var.enable_private_endpoint ? false : var.public_network_access_enabled
   # VNet integration not supported for Free/Shared tiers
-  virtual_network_subnet_id     = can(regex("^F[0-9]|^D[0-9]$", var.sku_name)) ? null : var.subnet_id
+  virtual_network_subnet_id = can(regex("^F[0-9]|^D[0-9]$", var.sku_name)) ? null : var.subnet_id
 
   site_config {
     # always_on not supported for Free/Shared tiers
-    always_on                = can(regex("^F[0-9]|^D[0-9]$", var.sku_name)) ? false : var.always_on
-    ftps_state               = var.ftps_state
-    http2_enabled            = var.http2_enabled
-    minimum_tls_version      = var.minimum_tls_version
-    vnet_route_all_enabled   = can(regex("^F[0-9]|^D[0-9]$", var.sku_name)) ? false : (var.subnet_id != null ? true : false)
-    health_check_path        = var.health_check_path
+    always_on              = can(regex("^F[0-9]|^D[0-9]$", var.sku_name)) ? false : var.always_on
+    ftps_state             = var.ftps_state
+    http2_enabled          = var.http2_enabled
+    minimum_tls_version    = var.minimum_tls_version
+    vnet_route_all_enabled = can(regex("^F[0-9]|^D[0-9]$", var.sku_name)) ? false : (var.subnet_id != null ? true : false)
+    health_check_path      = var.health_check_path
 
     application_stack {
       dotnet_version = var.dotnet_version
@@ -121,11 +121,11 @@ resource "azurerm_windows_web_app_slot" "slots" {
   app_service_id = azurerm_windows_web_app.this[0].id
 
   site_config {
-    always_on                = var.always_on
-    ftps_state               = var.ftps_state
-    http2_enabled            = var.http2_enabled
-    minimum_tls_version      = var.minimum_tls_version
-    vnet_route_all_enabled   = var.subnet_id != null ? true : false
+    always_on              = var.always_on
+    ftps_state             = var.ftps_state
+    http2_enabled          = var.http2_enabled
+    minimum_tls_version    = var.minimum_tls_version
+    vnet_route_all_enabled = var.subnet_id != null ? true : false
 
     application_stack {
       current_stack  = "dotnet"
@@ -149,11 +149,11 @@ resource "azurerm_linux_web_app_slot" "slots" {
   app_service_id = azurerm_linux_web_app.this[0].id
 
   site_config {
-    always_on                = var.always_on
-    ftps_state               = var.ftps_state
-    http2_enabled            = var.http2_enabled
-    minimum_tls_version      = var.minimum_tls_version
-    vnet_route_all_enabled   = var.subnet_id != null ? true : false
+    always_on              = var.always_on
+    ftps_state             = var.ftps_state
+    http2_enabled          = var.http2_enabled
+    minimum_tls_version    = var.minimum_tls_version
+    vnet_route_all_enabled = var.subnet_id != null ? true : false
 
     application_stack {
       dotnet_version = var.dotnet_version

@@ -30,14 +30,14 @@ output "networking" {
   description = "Virtual network information for both regions"
   value = {
     primary = {
-      vnet_id     = module.networking_primary.vnet_id
-      vnet_name   = module.networking_primary.vnet_name
-      subnet_ids  = module.networking_primary.subnet_ids
+      vnet_id    = module.networking_primary.vnet_id
+      vnet_name  = module.networking_primary.vnet_name
+      subnet_ids = module.networking_primary.subnet_ids
     }
     secondary = {
-      vnet_id     = module.networking_secondary.vnet_id
-      vnet_name   = module.networking_secondary.vnet_name
-      subnet_ids  = module.networking_secondary.subnet_ids
+      vnet_id    = module.networking_secondary.vnet_id
+      vnet_name  = module.networking_secondary.vnet_name
+      subnet_ids = module.networking_secondary.subnet_ids
     }
   }
 }
@@ -120,12 +120,12 @@ output "sql_mi" {
       name = module.sql_mi_primary[0].name
       fqdn = module.sql_mi_primary[0].fqdn
     }
-    secondary = {
+    secondary = var.enable_sql_mi_secondary ? {
       id   = module.sql_mi_secondary[0].id
       name = module.sql_mi_secondary[0].name
       fqdn = module.sql_mi_secondary[0].fqdn
-    }
-    failover_group = null  # Enable after both SQL MIs are created and failover group is configured
+    } : null
+    failover_group = null # Enable after both SQL MIs are created and failover group is configured
   } : null
   sensitive = true
 }
@@ -158,16 +158,16 @@ output "storage_accounts" {
   description = "Storage account information for both regions"
   value = var.enable_storage ? {
     primary = {
-      id                        = module.storage_primary[0].id
-      name                      = module.storage_primary[0].name
-      primary_blob_endpoint     = module.storage_primary[0].primary_blob_endpoint
-      secondary_blob_endpoint   = module.storage_primary[0].secondary_blob_endpoint
+      id                      = module.storage_primary[0].id
+      name                    = module.storage_primary[0].name
+      primary_blob_endpoint   = module.storage_primary[0].primary_blob_endpoint
+      secondary_blob_endpoint = module.storage_primary[0].secondary_blob_endpoint
     }
     secondary = {
-      id                        = module.storage_secondary[0].id
-      name                      = module.storage_secondary[0].name
-      primary_blob_endpoint     = module.storage_secondary[0].primary_blob_endpoint
-      secondary_blob_endpoint   = module.storage_secondary[0].secondary_blob_endpoint
+      id                      = module.storage_secondary[0].id
+      name                    = module.storage_secondary[0].name
+      primary_blob_endpoint   = module.storage_secondary[0].primary_blob_endpoint
+      secondary_blob_endpoint = module.storage_secondary[0].secondary_blob_endpoint
     }
   } : null
 }
@@ -198,7 +198,7 @@ output "key_vaults" {
 
 output "monitoring" {
   description = "Monitoring resources information"
-  sensitive = true
+  sensitive   = true
   value = {
     log_analytics_workspace_id = module.monitoring.log_analytics_workspace_id
     application_insights = {
@@ -218,7 +218,7 @@ output "connection_strings" {
   description = "Connection strings for applications (sensitive)"
   sensitive   = true
   value = {
-    sql_failover_group = null  # Enable after failover group is created
+    sql_failover_group = null # Enable after failover group is created
     redis_primary      = module.redis_primary.primary_connection_string
     redis_secondary    = module.redis_secondary.primary_connection_string
     app_insights = {
@@ -234,7 +234,7 @@ output "connection_strings" {
 
 output "deployment_summary" {
   description = "Summary of the deployment"
-  value = <<-EOT
+  value       = <<-EOT
 
     ═══════════════════════════════════════════════════════════════
     POC Application - Multi-Region Resilient Infrastructure

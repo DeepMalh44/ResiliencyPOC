@@ -61,18 +61,18 @@ resource "azurerm_monitor_metric_alert" "sql_mi_availability" {
   resource_group_name = var.resource_group_name
   scopes              = [var.sql_mi_resource_id]
   description         = "SQL Managed Instance availability dropped below threshold - potential DR trigger"
-  severity            = 0  # Critical
+  severity            = 0 # Critical
   enabled             = true
   frequency           = "PT1M"
   window_size         = "PT5M"
-  auto_mitigate       = false  # Don't auto-resolve - requires manual confirmation after failover
+  auto_mitigate       = false # Don't auto-resolve - requires manual confirmation after failover
 
   criteria {
     metric_namespace = "Microsoft.Sql/managedInstances"
     metric_name      = "avg_cpu_percent"
     aggregation      = "Average"
     operator         = "LessThan"
-    threshold        = 0  # 0% CPU = instance unavailable
+    threshold        = 0 # 0% CPU = instance unavailable
   }
 
   action {
@@ -99,7 +99,7 @@ resource "azurerm_monitor_activity_log_alert" "sql_mi_health" {
 
   criteria {
     category = "ResourceHealth"
-    
+
     resource_health {
       current  = ["Degraded", "Unavailable"]
       previous = ["Available"]
@@ -127,7 +127,7 @@ resource "azurerm_monitor_metric_alert" "app_service_availability" {
   resource_group_name = var.resource_group_name
   scopes              = var.app_service_resource_ids
   description         = "App Service availability dropped below 90% - potential region outage"
-  severity            = 0  # Critical
+  severity            = 0 # Critical
   enabled             = true
   frequency           = "PT1M"
   window_size         = "PT5M"
@@ -138,7 +138,7 @@ resource "azurerm_monitor_metric_alert" "app_service_availability" {
     metric_name      = "HealthCheckStatus"
     aggregation      = "Average"
     operator         = "LessThan"
-    threshold        = 90  # Less than 90% healthy
+    threshold        = 90 # Less than 90% healthy
   }
 
   action {
@@ -161,7 +161,7 @@ resource "azurerm_monitor_metric_alert" "app_service_5xx_errors" {
   resource_group_name = var.resource_group_name
   scopes              = var.app_service_resource_ids
   description         = "App Service experiencing high 5xx error rate - potential region outage"
-  severity            = 0  # Critical
+  severity            = 0 # Critical
   enabled             = true
   frequency           = "PT1M"
   window_size         = "PT5M"
@@ -172,7 +172,7 @@ resource "azurerm_monitor_metric_alert" "app_service_5xx_errors" {
     metric_name      = "Http5xx"
     aggregation      = "Total"
     operator         = "GreaterThan"
-    threshold        = 100  # More than 100 5xx errors in 5 minutes
+    threshold        = 100 # More than 100 5xx errors in 5 minutes
   }
 
   action {
@@ -195,7 +195,7 @@ resource "azurerm_monitor_metric_alert" "redis_availability" {
   resource_group_name = var.resource_group_name
   scopes              = [var.redis_cache_resource_id]
   description         = "Redis Cache server load critical - potential region outage"
-  severity            = 0  # Critical
+  severity            = 0 # Critical
   enabled             = true
   frequency           = "PT1M"
   window_size         = "PT5M"
@@ -206,7 +206,7 @@ resource "azurerm_monitor_metric_alert" "redis_availability" {
     metric_name      = "serverLoad"
     aggregation      = "Average"
     operator         = "GreaterThan"
-    threshold        = 99  # Server load > 99% = effectively unavailable
+    threshold        = 99 # Server load > 99% = effectively unavailable
   }
 
   action {
@@ -229,7 +229,7 @@ resource "azurerm_monitor_metric_alert" "redis_connected_clients" {
   resource_group_name = var.resource_group_name
   scopes              = [var.redis_cache_resource_id]
   description         = "Redis Cache lost all connections - potential region outage"
-  severity            = 0  # Critical
+  severity            = 0 # Critical
   enabled             = true
   frequency           = "PT1M"
   window_size         = "PT5M"
@@ -240,7 +240,7 @@ resource "azurerm_monitor_metric_alert" "redis_connected_clients" {
     metric_name      = "connectedclients"
     aggregation      = "Average"
     operator         = "LessThan"
-    threshold        = 1  # No connected clients = unavailable
+    threshold        = 1 # No connected clients = unavailable
   }
 
   action {
@@ -263,7 +263,7 @@ resource "azurerm_monitor_metric_alert" "frontdoor_backend_health" {
   resource_group_name = var.resource_group_name
   scopes              = [var.front_door_resource_id]
   description         = "Front Door backend health percentage dropped - multiple backend failures"
-  severity            = 1  # Warning (Front Door handles failover automatically)
+  severity            = 1 # Warning (Front Door handles failover automatically)
   enabled             = true
   frequency           = "PT1M"
   window_size         = "PT5M"
@@ -274,7 +274,7 @@ resource "azurerm_monitor_metric_alert" "frontdoor_backend_health" {
     metric_name      = "OriginHealthPercentage"
     aggregation      = "Average"
     operator         = "LessThan"
-    threshold        = 50  # Less than 50% backends healthy
+    threshold        = 50 # Less than 50% backends healthy
   }
 
   action {
@@ -301,7 +301,7 @@ resource "azurerm_monitor_activity_log_alert" "region_outage" {
 
   criteria {
     category = "ServiceHealth"
-    
+
     service_health {
       locations = var.dr_monitored_regions
       events    = ["Incident", "Maintenance"]

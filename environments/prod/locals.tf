@@ -10,13 +10,13 @@ locals {
   # Regional configuration
   regions = {
     primary = {
-      name     = var.primary_location
-      short    = local.region_short_names[var.primary_location]
+      name       = var.primary_location
+      short      = local.region_short_names[var.primary_location]
       is_primary = true
     }
     secondary = {
-      name     = var.secondary_location
-      short    = local.region_short_names[var.secondary_location]
+      name       = var.secondary_location
+      short      = local.region_short_names[var.secondary_location]
       is_primary = false
     }
   }
@@ -85,7 +85,7 @@ locals {
   appi_names = {
     for region_key, region in local.regions : region_key => "appi-${local.project_name}-${local.environment}-${region.short}"
   }
-  
+
   # Automation Account name for DR failover
   automation_account_name = "aa-${local.project_name}-${local.environment}-dr"
 
@@ -97,37 +97,37 @@ locals {
   # Subnet CIDR calculations
   subnet_config = {
     primary = {
-      vnet_cidr     = "10.1.0.0/16"
-      app_service   = "10.1.1.0/24"
-      function_app  = "10.1.2.0/24"
-      apim          = "10.1.3.0/24"
+      vnet_cidr         = "10.1.0.0/16"
+      app_service       = "10.1.1.0/24"
+      function_app      = "10.1.2.0/24"
+      apim              = "10.1.3.0/24"
       private_endpoints = "10.1.4.0/24"
-      sql_mi        = "10.1.5.0/24"
-      redis         = "10.1.6.0/24"
-      bastion       = "10.1.254.0/24"
+      sql_mi            = "10.1.5.0/24"
+      redis             = "10.1.6.0/24"
+      bastion           = "10.1.254.0/24"
     }
     secondary = {
-      vnet_cidr     = "10.2.0.0/16"
-      app_service   = "10.2.1.0/24"
-      function_app  = "10.2.2.0/24"
-      apim          = "10.2.3.0/24"
+      vnet_cidr         = "10.2.0.0/16"
+      app_service       = "10.2.1.0/24"
+      function_app      = "10.2.2.0/24"
+      apim              = "10.2.3.0/24"
       private_endpoints = "10.2.4.0/24"
-      sql_mi        = "10.2.5.0/24"
-      redis         = "10.2.6.0/24"
-      bastion       = "10.2.254.0/24"
+      sql_mi            = "10.2.5.0/24"
+      redis             = "10.2.6.0/24"
+      bastion           = "10.2.254.0/24"
     }
   }
 
   # Private DNS Zone names
   private_dns_zones = {
-    blob      = "privatelink.blob.core.windows.net"
-    file      = "privatelink.file.core.windows.net"
-    queue     = "privatelink.queue.core.windows.net"
-    table     = "privatelink.table.core.windows.net"
-    keyvault  = "privatelink.vaultcore.azure.net"
-    redis     = "privatelink.redis.cache.windows.net"
-    sql       = "privatelink.database.windows.net"
-    webapp    = "privatelink.azurewebsites.net"
-    apim      = "privatelink.azure-api.net"
+    blob     = "privatelink.blob.core.windows.net"
+    file     = "privatelink.file.core.windows.net"
+    queue    = "privatelink.queue.core.windows.net"
+    table    = "privatelink.table.core.windows.net"
+    keyvault = "privatelink.vaultcore.azure.net"
+    redis    = "privatelink.redis.cache.windows.net"
+    sql      = "privatelink.database.windows.net"
+    webapp   = "privatelink.azurewebsites.net"
+    apim     = "privatelink.azure-api.net"
   }
 }

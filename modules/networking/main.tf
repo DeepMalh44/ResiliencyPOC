@@ -86,15 +86,78 @@ resource "azurerm_subnet_network_security_group_association" "subnets" {
 }
 
 #--------------------------------------------------------------
-# SQL MI NSG Rules - REMOVED
-# SQL MI automatically creates and manages its own NSG rules 
-# when deployed. Manual rules conflict with Azure-managed rules.
-# The following rules are now managed by Azure automatically:
-# - Management inbound (SqlManagement service tag)
-# - Health probe inbound (AzureLoadBalancer)
-# - Geo-replication (VirtualNetwork)
-# - Management outbound (AzureCloud)
+# SQL MI NSG Rules for Geo-Replication
+# These rules allow failover group traffic between SQL MIs
+# across peered VNets. Priority < 4096 (before DenyAllInbound)
 #--------------------------------------------------------------
+
+# Allow SQL MI geo-replication port 5022 between VNets
+resource "azurerm_network_security_rule" "sqlmi_geo_replication_5022" {
+  for_each = { for k, v in var.subnets : k => v if v.is_sqlmi_subnet }
+
+  name                        = "Allow_SQLMi_GeoReplication_5022"
+  priority                    = 200
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "5022"
+  source_address_prefix       = "VirtualNetwork"
+  destination_address_prefix  = "*"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.subnets[each.key].name
+}
+
+# Allow SQL MI port range 11000-11999 for replication
+resource "azurerm_network_security_rule" "sqlmi_geo_replication_11000" {
+  for_each = { for k, v in var.subnets : k => v if v.is_sqlmi_subnet }
+
+  name                        = "Allow_SQLMi_GeoReplication_11000_11999"
+  priority                    = 201
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "11000-11999"
+  source_address_prefix       = "VirtualNetwork"
+  destination_address_prefix  = "*"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.subnets[each.key].name
+}
+
+# Allow SQL MI port 1433 for failover group listener
+resource "azurerm_network_security_rule" "sqlmi_listener_1433" {
+  for_each = { for k, v in var.subnets : k => v if v.is_sqlmi_subnet }
+
+  name                        = "Allow_SQLMi_Listener_1433"
+  priority                    = 202
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "1433"
+  source_address_prefix       = "VirtualNetwork"
+  destination_address_prefix  = "*"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.subnets[each.key].name
+}
+
+# Allow outbound geo-replication traffic from SQL MI
+resource "azurerm_network_security_rule" "sqlmi_geo_replication_outbound" {
+  for_each = { for k, v in var.subnets : k => v if v.is_sqlmi_subnet }
+
+  name                        = "Allow_SQLMi_GeoReplication_Outbound"
+  priority                    = 200
+  direction                   = "Outbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_ranges     = ["5022", "11000-11999", "1433"]
+  source_address_prefix       = "*"
+  destination_address_prefix  = "VirtualNetwork"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.subnets[each.key].name
+}
 
 #--------------------------------------------------------------
 # Route Table for SQL MI (if needed)

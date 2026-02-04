@@ -52,7 +52,7 @@ output "private_endpoint_ip" {
 # Disabled for initial deployment - geo-replication requires primary cache to exist first
 output "linked_server_name" {
   description = "Name of the geo-replication linked server"
-  value       = null  # Enable after initial deployment: var.linked_redis_cache_id != null ? azurerm_redis_linked_server.this[0].name : null
+  value       = null # Enable after initial deployment: var.linked_redis_cache_id != null ? azurerm_redis_linked_server.this[0].name : null
 }
 
 output "id" {

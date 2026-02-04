@@ -19,35 +19,35 @@ $Global:DrDrill = @{
     # Primary Region (East US 2)
     Primary = @{
         Region           = "eastus2"
-        ResourceGroup    = "rg-pocapp2-prod-eus2"
-        AppService       = "app-pocapp2-prod-eus2"
-        FunctionApp      = "func-pocapp2-prod-eus2"
-        SqlMi            = "sqlmi-pocapp2-prod-eus2"
-        Redis            = "redis-pocapp2-prod-eus2"
-        Storage          = "stpocapp2prodeus2"
+        ResourceGroup    = "rg-pocapp5-prod-eus2"
+        AppService       = "app-pocapp5-prod-eus2"
+        FunctionApp      = "func-pocapp5-prod-eus2"
+        SqlMi            = "sqlmi-pocapp5-prod-eus2"
+        Redis            = "redis-pocapp5-prod-eus2"
+        Storage          = "stpocapp5prodeus2"
     }
     
     # Secondary Region (Central US)
     Secondary = @{
         Region           = "centralus"
-        ResourceGroup    = "rg-pocapp2-prod-cus"
-        AppService       = "app-pocapp2-prod-cus"
-        FunctionApp      = "func-pocapp2-prod-cus"
-        SqlMi            = "sqlmi-pocapp2-prod-cus"
-        Redis            = "redis-pocapp2-prod-cus"
-        Storage          = "stpocapp2prodcus"
+        ResourceGroup    = "rg-pocapp5-prod-cus"
+        AppService       = "app-pocapp5-prod-cus"
+        FunctionApp      = "func-pocapp5-prod-cus"
+        SqlMi            = "sqlmi-pocapp5-prod-cus"
+        Redis            = "redis-pocapp5-prod-cus"
+        Storage          = "stpocapp5prodcus"
     }
     
     # Failover Group
     FailoverGroup = @{
-        Name             = "fog-pocapp2-prod"
+        Name             = "fog-pocapp5-prod"
     }
     
     # Front Door
     FrontDoor = @{
-        Name             = "fd-pocapp2-prod"
-        ResourceGroup    = "rg-pocapp2-prod-eus2"
-        Endpoint         = "fd-pocapp2-prod.azurefd.net"
+        Name             = "fd-pocapp5-prod"
+        ResourceGroup    = "rg-pocapp5-prod-eus2"
+        Endpoint         = "fd-pocapp5-prod.azurefd.net"
         OriginGroup      = "default-origin-group"
     }
     

@@ -38,16 +38,16 @@ resource "azurerm_windows_function_app" "this" {
   functions_extension_version   = var.functions_extension_version
 
   site_config {
-    ftps_state              = var.ftps_state
-    http2_enabled           = var.http2_enabled
-    minimum_tls_version     = var.minimum_tls_version
-    vnet_route_all_enabled  = startswith(var.sku_name, "Y") ? false : (var.subnet_id != null ? true : false)
-    use_32_bit_worker       = false
+    ftps_state             = var.ftps_state
+    http2_enabled          = var.http2_enabled
+    minimum_tls_version    = var.minimum_tls_version
+    vnet_route_all_enabled = startswith(var.sku_name, "Y") ? false : (var.subnet_id != null ? true : false)
+    use_32_bit_worker      = false
 
     # Elastic Premium features only
     # When zone_balancing_enabled = true, elastic_instance_minimum must be > 2 (Azure requirement)
-    elastic_instance_minimum          = startswith(var.sku_name, "EP") ? (var.zone_balancing_enabled ? 3 : 1) : null
-    runtime_scale_monitoring_enabled  = startswith(var.sku_name, "EP") ? true : false
+    elastic_instance_minimum         = startswith(var.sku_name, "EP") ? (var.zone_balancing_enabled ? 3 : 1) : null
+    runtime_scale_monitoring_enabled = startswith(var.sku_name, "EP") ? true : false
 
     application_stack {
       dotnet_version              = var.runtime_name == "dotnet-isolated" || var.runtime_name == "dotnet" ? "v${var.runtime_version}" : null
@@ -95,16 +95,16 @@ resource "azurerm_linux_function_app" "this" {
   functions_extension_version   = var.functions_extension_version
 
   site_config {
-    ftps_state              = var.ftps_state
-    http2_enabled           = var.http2_enabled
-    minimum_tls_version     = var.minimum_tls_version
-    vnet_route_all_enabled  = startswith(var.sku_name, "Y") ? false : (var.subnet_id != null ? true : false)
-    use_32_bit_worker       = false
+    ftps_state             = var.ftps_state
+    http2_enabled          = var.http2_enabled
+    minimum_tls_version    = var.minimum_tls_version
+    vnet_route_all_enabled = startswith(var.sku_name, "Y") ? false : (var.subnet_id != null ? true : false)
+    use_32_bit_worker      = false
 
     # Elastic Premium features only
     # When zone_balancing_enabled = true, elastic_instance_minimum must be > 2 (Azure requirement)
-    elastic_instance_minimum          = startswith(var.sku_name, "EP") ? (var.zone_balancing_enabled ? 3 : 1) : null
-    runtime_scale_monitoring_enabled  = startswith(var.sku_name, "EP") ? true : false
+    elastic_instance_minimum         = startswith(var.sku_name, "EP") ? (var.zone_balancing_enabled ? 3 : 1) : null
+    runtime_scale_monitoring_enabled = startswith(var.sku_name, "EP") ? true : false
 
     application_stack {
       dotnet_version              = var.runtime_name == "dotnet-isolated" || var.runtime_name == "dotnet" ? var.runtime_version : null
