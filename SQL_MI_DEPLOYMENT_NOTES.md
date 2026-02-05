@@ -1,21 +1,36 @@
 # SQL MI Deployment Session Notes
-## POC Resiliency Project - February 2, 2026
+## POC Resiliency Project - February 2026
 
-> **DELETE THIS FILE** once SQL MIs are successfully deployed
+> ✅ **RESOLVED** - All SQL MI issues have been fixed. This file is kept for historical reference.
 
 ---
 
-## Current State
+## ✅ FINAL RESOLUTION (February 4, 2026)
+
+All SQL MI deployment issues have been resolved:
+
+1. **SKU Changed**: From `BC_Gen5` (blocked by quota) → `GP_G8IM` (General Purpose Premium Series)
+2. **NSG Rules Added**: Geo-replication ports 5022, 11000-11999, 1433 for VirtualNetwork
+3. **Failover Group**: Successfully created using separate resource to avoid circular dependency
+4. **Deployment Verified**: `pocapp6` successfully deployed with:
+   - SQL MI Primary: `sqlmi-pocapp6-prod-eus2` (~40 min)
+   - SQL MI Secondary: `sqlmi-pocapp6-prod-cus` (~18 min)
+   - Failover Group: `fog-pocapp6-prod` (~1 min)
+
+---
+
+## Historical Notes (Original Issues)
 
 **Infrastructure Created:**
-- ✅ Resource Groups: `rg-pocapp2-prod-eus2` (primary), `rg-pocapp2-prod-cus` (secondary)
-- ✅ VNets, Subnets, NSGs in both regions
+- ✅ Resource Groups: `rg-pocapp6-prod-eus2` (primary), `rg-pocapp6-prod-cus` (secondary)
+- ✅ VNets, Subnets, NSGs in both regions with geo-replication rules
 - ✅ Route Tables for SQL MI subnets
 - ✅ SQL MI subnet delegations configured correctly
 
 **SQL MI Status:**
-- ❌ **EUS2 (Primary)**: NOT created - blocked by Gen5 vCore quota = 0
-- 🔄 **CUS (Secondary)**: Was creating for 7+ hours (Virtual Cluster step), status unknown now
+- ✅ **EUS2 (Primary)**: Successfully deployed with GP_G8IM SKU
+- ✅ **CUS (Secondary)**: Successfully deployed with GP_G8IM SKU
+- ✅ **Failover Group**: Successfully configured (`fog-pocapp6-prod`)
 
 ---
 

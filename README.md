@@ -46,7 +46,7 @@ This Terraform implementation deploys a highly resilient, multi-zone, multi-regi
 │  App Service (P1v3 x 3, ZR)     │       │  App Service (P1v3 x 3, ZR)     │
 │  Function App (EP2, ZR)         │       │  Function App (EP2, ZR)         │
 │  API Management (Premium x 2)   │◄─────►│  API Management (Secondary)     │
-│  SQL MI (Business Critical)     │◄═════►│  SQL MI (Failover Replica)      │
+│  SQL MI (GP Premium Series)     │◄═════►│  SQL MI (Failover Replica)      │
 │  Redis (Premium P1, ZR)         │◄─────►│  Redis (Geo-Replica)            │
 │  Storage (RA-GZRS)              │◄─────►│  Storage (RA-GZRS)              │
 │  Key Vault (Premium, RBAC)      │       │  Key Vault (Premium, RBAC)      │
@@ -146,12 +146,12 @@ az storage container create -n tfstate --account-name stterraformstate
 
 | Resource | Approximate Time |
 |----------|------------------|
-| SQL Managed Instance | 4-6 hours (per instance) |
+| SQL Managed Instance | 30-60 minutes (per instance with GP_G8IM Premium Series) |
 | API Management Premium | 30-45 minutes |
 | VNet Peering | 2-5 minutes |
 | Other resources | 5-15 minutes each |
 
-**Total estimated time: 8-12 hours** (mainly due to SQL MI)
+**Total estimated time: 2-3 hours** (SQL MI Premium Series deploys much faster than Gen5)
 
 ## ⚙️ Configuration
 
@@ -192,6 +192,7 @@ secondary_location = "centralus"
 | **Encryption** | TLS 1.2 minimum, Key Vault for secrets |
 | **WAF** | Azure Front Door WAF in Prevention mode |
 | **Authorization** | Key Vault RBAC, SQL MI AD auth |
+| **SQL MI NSG** | Geo-replication rules for ports 5022, 11000-11999, 1433 (VirtualNetwork) |
 
 ## 📊 Resiliency Features
 
@@ -200,7 +201,7 @@ secondary_location = "centralus"
 | **Web App** | P1v3 x 3 (Zone Redundant) | P1v3 x 3 (Zone Redundant) | Active-Active via Front Door |
 | **Function App** | Elastic Premium EP2 | Elastic Premium EP2 | Active-Active via Front Door |
 | **API Management** | Premium 2 units (ZR) | Premium Secondary | Multi-region deployment |
-| **SQL MI** | Business Critical (ZR) | Business Critical | Failover Group (60 min grace) |
+| **SQL MI** | GP Premium Series (GP_G8IM) | GP Premium Series | Failover Group (60 min grace) |
 | **Redis Cache** | Premium P1 (ZR) | Premium P1 | Geo-Replication |
 | **Storage** | RA-GZRS | RA-GZRS | Built-in Geo-Redundancy |
 | **Key Vault** | Premium + RBAC | Premium + RBAC | Independent (config sync) |
