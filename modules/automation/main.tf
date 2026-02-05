@@ -34,7 +34,7 @@ resource "azurerm_role_assignment" "automation_contributor" {
 
 # If secondary resource group is different, grant access there too
 resource "azurerm_role_assignment" "automation_contributor_secondary" {
-  count                = var.secondary_resource_group_id != "" ? 1 : 0
+  count                = var.enable_secondary_rg_role ? 1 : 0
   scope                = var.secondary_resource_group_id
   role_definition_name = "Contributor"
   principal_id         = azurerm_automation_account.this.identity[0].principal_id
@@ -42,7 +42,7 @@ resource "azurerm_role_assignment" "automation_contributor_secondary" {
 
 # SQL MI Contributor for failover group management
 resource "azurerm_role_assignment" "sql_mi_contributor" {
-  count                = var.sql_mi_id != "" ? 1 : 0
+  count                = var.enable_sql_mi_role ? 1 : 0
   scope                = var.sql_mi_id
   role_definition_name = "SQL Managed Instance Contributor"
   principal_id         = azurerm_automation_account.this.identity[0].principal_id
@@ -50,7 +50,7 @@ resource "azurerm_role_assignment" "sql_mi_contributor" {
 
 # Redis Cache Contributor for geo-replication failover
 resource "azurerm_role_assignment" "redis_contributor" {
-  count                = var.redis_cache_id != "" ? 1 : 0
+  count                = var.enable_redis_role ? 1 : 0
   scope                = var.redis_cache_id
   role_definition_name = "Redis Cache Contributor"
   principal_id         = azurerm_automation_account.this.identity[0].principal_id
@@ -150,7 +150,7 @@ resource "azurerm_automation_webhook" "dr_failover" {
 # Diagnostic Settings for Automation Account
 #------------------------------------------------------------------------------
 resource "azurerm_monitor_diagnostic_setting" "automation" {
-  count                      = var.log_analytics_workspace_id != "" ? 1 : 0
+  count                      = var.enable_diagnostics ? 1 : 0
   name                       = "${var.automation_account_name}-diag"
   target_resource_id         = azurerm_automation_account.this.id
   log_analytics_workspace_id = var.log_analytics_workspace_id

@@ -24,24 +24,13 @@ resource "azurerm_monitor_action_group" "dr_failover" {
   }
 
   # Webhook to trigger Automation Runbook
+  # Note: We use webhook_receiver instead of automation_runbook_receiver
+  # because automation_runbook_receiver requires the webhook_resource_id
+  # which is not available until after the webhook is created
   dynamic "webhook_receiver" {
     for_each = var.dr_webhook_uri != "" ? [1] : []
     content {
       name                    = "DRFailoverRunbook"
-      service_uri             = var.dr_webhook_uri
-      use_common_alert_schema = true
-    }
-  }
-
-  # Automation Runbook receiver (alternative to webhook)
-  dynamic "automation_runbook_receiver" {
-    for_each = var.dr_automation_account_id != "" ? [1] : []
-    content {
-      name                    = "DRFailoverRunbook"
-      automation_account_id   = var.dr_automation_account_id
-      runbook_name            = var.dr_runbook_name
-      webhook_resource_id     = var.dr_webhook_resource_id
-      is_global_runbook       = false
       service_uri             = var.dr_webhook_uri
       use_common_alert_schema = true
     }
@@ -55,7 +44,7 @@ resource "azurerm_monitor_action_group" "dr_failover" {
 # Triggers failover when SQL MI becomes unavailable
 #------------------------------------------------------------------------------
 resource "azurerm_monitor_metric_alert" "sql_mi_availability" {
-  count = var.enable_dr_alerts && var.sql_mi_resource_id != "" ? 1 : 0
+  count = var.enable_dr_alerts && var.enable_sql_mi_alerts ? 1 : 0
 
   name                = "alert-sqlmi-availability-critical"
   resource_group_name = var.resource_group_name
@@ -89,7 +78,7 @@ resource "azurerm_monitor_metric_alert" "sql_mi_availability" {
 # SQL MI Connection Failures Alert
 #------------------------------------------------------------------------------
 resource "azurerm_monitor_activity_log_alert" "sql_mi_health" {
-  count = var.enable_dr_alerts && var.sql_mi_resource_id != "" ? 1 : 0
+  count = var.enable_dr_alerts && var.enable_sql_mi_alerts ? 1 : 0
 
   name                = "alert-sqlmi-health-degraded"
   resource_group_name = var.resource_group_name
@@ -121,7 +110,7 @@ resource "azurerm_monitor_activity_log_alert" "sql_mi_health" {
 # App Service Availability Alert
 #------------------------------------------------------------------------------
 resource "azurerm_monitor_metric_alert" "app_service_availability" {
-  count = var.enable_dr_alerts && length(var.app_service_resource_ids) > 0 ? 1 : 0
+  count = var.enable_dr_alerts && var.enable_app_service_alerts ? 1 : 0
 
   name                = "alert-appservice-availability-critical"
   resource_group_name = var.resource_group_name
@@ -155,7 +144,7 @@ resource "azurerm_monitor_metric_alert" "app_service_availability" {
 # App Service HTTP 5xx Errors Alert
 #------------------------------------------------------------------------------
 resource "azurerm_monitor_metric_alert" "app_service_5xx_errors" {
-  count = var.enable_dr_alerts && length(var.app_service_resource_ids) > 0 ? 1 : 0
+  count = var.enable_dr_alerts && var.enable_app_service_alerts ? 1 : 0
 
   name                = "alert-appservice-5xx-critical"
   resource_group_name = var.resource_group_name
@@ -189,7 +178,7 @@ resource "azurerm_monitor_metric_alert" "app_service_5xx_errors" {
 # Redis Cache Availability Alert
 #------------------------------------------------------------------------------
 resource "azurerm_monitor_metric_alert" "redis_availability" {
-  count = var.enable_dr_alerts && var.redis_cache_resource_id != "" ? 1 : 0
+  count = var.enable_dr_alerts && var.enable_redis_alerts ? 1 : 0
 
   name                = "alert-redis-availability-critical"
   resource_group_name = var.resource_group_name
@@ -223,7 +212,7 @@ resource "azurerm_monitor_metric_alert" "redis_availability" {
 # Redis Cache Connectivity Alert
 #------------------------------------------------------------------------------
 resource "azurerm_monitor_metric_alert" "redis_connected_clients" {
-  count = var.enable_dr_alerts && var.redis_cache_resource_id != "" ? 1 : 0
+  count = var.enable_dr_alerts && var.enable_redis_alerts ? 1 : 0
 
   name                = "alert-redis-connectivity-critical"
   resource_group_name = var.resource_group_name
@@ -257,7 +246,7 @@ resource "azurerm_monitor_metric_alert" "redis_connected_clients" {
 # Front Door Health Probe Alert
 #------------------------------------------------------------------------------
 resource "azurerm_monitor_metric_alert" "frontdoor_backend_health" {
-  count = var.enable_dr_alerts && var.front_door_resource_id != "" ? 1 : 0
+  count = var.enable_dr_alerts && var.enable_front_door_alerts ? 1 : 0
 
   name                = "alert-frontdoor-backend-health-critical"
   resource_group_name = var.resource_group_name

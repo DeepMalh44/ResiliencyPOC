@@ -190,10 +190,22 @@ variable "sql_mi_resource_id" {
   default     = ""
 }
 
+variable "enable_sql_mi_alerts" {
+  description = "Enable SQL MI DR alerts (set to true when SQL MI is deployed)"
+  type        = bool
+  default     = false
+}
+
 variable "app_service_resource_ids" {
   description = "List of App Service resource IDs for DR alerts"
   type        = list(string)
   default     = []
+}
+
+variable "enable_app_service_alerts" {
+  description = "Enable App Service DR alerts"
+  type        = bool
+  default     = true
 }
 
 variable "redis_cache_resource_id" {
@@ -202,10 +214,22 @@ variable "redis_cache_resource_id" {
   default     = ""
 }
 
+variable "enable_redis_alerts" {
+  description = "Enable Redis DR alerts (set to true when Redis is deployed)"
+  type        = bool
+  default     = false
+}
+
 variable "front_door_resource_id" {
   description = "Resource ID of the Front Door profile for DR alerts"
   type        = string
   default     = ""
+}
+
+variable "enable_front_door_alerts" {
+  description = "Enable Front Door DR alerts"
+  type        = bool
+  default     = true
 }
 
 variable "dr_monitored_regions" {

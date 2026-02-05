@@ -1104,12 +1104,15 @@ module "automation" {
 
   # Secondary region for cross-region failover permissions
   secondary_resource_group_id = module.resource_group_secondary.id
+  enable_secondary_rg_role    = true
 
   # SQL MI role assignment (when SQL MI is deployed)
-  sql_mi_id = var.enable_sql_mi ? module.sql_mi_primary[0].id : ""
+  sql_mi_id        = var.enable_sql_mi ? module.sql_mi_primary[0].id : ""
+  enable_sql_mi_role = var.enable_sql_mi
 
   # Redis role assignment (when Redis is deployed)
-  redis_cache_id = var.enable_redis ? module.redis_primary[0].id : ""
+  redis_cache_id    = var.enable_redis ? module.redis_primary.redis_cache_id : ""
+  enable_redis_role = var.enable_redis
 
   # Runbook configuration
   runbook_name    = "Invoke-DRFailover"
@@ -1120,6 +1123,7 @@ module "automation" {
 
   # Diagnostics
   log_analytics_workspace_id = module.monitoring.log_analytics_workspace_id
+  enable_diagnostics         = true
 
   tags = local.common_tags
 }
@@ -1176,8 +1180,14 @@ module "dr_monitoring" {
   # Resource IDs for monitoring - NOW POPULATED WITH ACTUAL RESOURCES
   sql_mi_resource_id       = var.enable_sql_mi ? module.sql_mi_primary[0].id : ""
   app_service_resource_ids = [module.app_service_primary.id]
-  redis_cache_resource_id  = var.enable_redis ? module.redis_primary[0].redis_cache_id : ""
+  redis_cache_resource_id  = var.enable_redis ? module.redis_primary.redis_cache_id : ""
   front_door_resource_id   = module.front_door.front_door_profile_id
+
+  # Boolean flags for alert enablement (avoids computed value issues)
+  enable_sql_mi_alerts      = var.enable_sql_mi
+  enable_app_service_alerts = true
+  enable_redis_alerts       = var.enable_redis
+  enable_front_door_alerts  = true
 
   # Monitored regions
   dr_monitored_regions = ["East US 2", "Central US"]

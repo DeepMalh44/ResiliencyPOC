@@ -69,13 +69,23 @@ Legend: ═══ Failover Group │ ─── Geo-Replication │ ZR = Zone Red
 terraform/
 ├── Diagrams/
 │   └── pocapp_architecture.drawio   # Visual architecture diagram (Draw.io)
+├── dr-drill-runbook/                # DR drill PowerShell scripts
+│   ├── 00-Setup-Environment.ps1
+│   ├── 01-Check-Health.ps1
+│   ├── 02-AppService-Failover.ps1
+│   ├── 03-SQLMI-Failover.ps1
+│   ├── 04-Redis-Failover.ps1
+│   ├── 05-FullRegion-Failover.ps1
+│   ├── 06-Failback-All.ps1
+│   └── README.md
 ├── modules/
 │   ├── apim/                # API Management Premium (multi-region)
 │   ├── app-service/         # App Service + Deployment Slots
+│   ├── automation/          # Azure Automation for DR failover
 │   ├── front-door/          # Azure Front Door Premium + WAF
 │   ├── function-app/        # Function Apps Elastic Premium
 │   ├── key-vault/           # Azure Key Vault with RBAC
-│   ├── monitoring/          # Log Analytics + App Insights + Alerts
+│   ├── monitoring/          # Log Analytics + App Insights + DR Alerts
 │   ├── networking/          # VNets, Subnets, NSGs, VNet Peering
 │   ├── private-endpoint/    # Reusable private endpoint module
 │   ├── redis/               # Redis Cache Premium + Geo-Replication
@@ -212,6 +222,54 @@ secondary_location = "centralus"
 - **Application Insights**: APM for App Services and Function Apps
 - **Metric Alerts**: CPU, Memory, Response Time thresholds
 - **Action Groups**: Email notifications for critical alerts
+
+## 🚨 DR Automation & Alerts
+
+### Automated Failover Infrastructure
+
+When `enable_automated_failover = true` in terraform.tfvars, the following DR automation components are deployed:
+
+| Component | Description |
+|-----------|-------------|
+| **Automation Account** | `aa-{project}-{env}-dr` - Azure Automation Account with System Assigned Identity |
+| **Runbook** | `Invoke-DRFailover` - PowerShell runbook for automated failover operations |
+| **Webhook** | Webhook trigger for alert-based automation |
+| **Az Modules** | Az.Accounts, Az.Sql, Az.RedisCache, Az.Websites modules for cross-service failover |
+
+### DR Alert Rules
+
+The following alerts are created to monitor critical infrastructure and trigger automated failover:
+
+| Alert | Type | Trigger Condition | Severity |
+|-------|------|-------------------|----------|
+| `alert-sqlmi-availability-critical` | Metric | CPU drops to 0% (instance unavailable) | Critical (0) |
+| `alert-sqlmi-health-degraded` | Activity Log | Resource health becomes Degraded/Unavailable | Critical |
+| `alert-appservice-availability-critical` | Metric | Health check status < 90% | Critical (0) |
+| `alert-appservice-5xx-critical` | Metric | >100 HTTP 5xx errors in 5 min | Critical (0) |
+| `alert-redis-availability-critical` | Metric | Server load > 99% | Critical (0) |
+| `alert-redis-connectivity-critical` | Metric | Connected clients < 1 | Critical (0) |
+| `alert-frontdoor-backend-health-critical` | Metric | Origin health < 50% | Warning (1) |
+| `alert-region-service-health` | Activity Log | Azure service incident in monitored regions | Critical |
+
+### Viewing DR Alerts in Azure Portal
+
+1. Navigate to **Azure Portal** → **Monitor** → **Alerts** → **Alert rules**
+2. Or: **Resource Group** → `rg-{project}-{env}-{region}` → **Alerts** → **Alert rules**
+3. **Action Group**: `ag-dr-failover-{project}-{env}` contains the webhook receiver
+
+### DR Drill Runbook Scripts
+
+Located in `dr-drill-runbook/`:
+
+| Script | Purpose |
+|--------|---------|
+| `00-Setup-Environment.ps1` | Initialize environment variables |
+| `01-Check-Health.ps1` | Verify health of all DR components |
+| `02-AppService-Failover.ps1` | Failover App Service via Front Door |
+| `03-SQLMI-Failover.ps1` | Trigger SQL MI Failover Group switch |
+| `04-Redis-Failover.ps1` | Redis geo-replication failover |
+| `05-FullRegion-Failover.ps1` | Complete regional failover |
+| `06-Failback-All.ps1` | Restore to primary region |
 
 ## 📝 Files Reference
 

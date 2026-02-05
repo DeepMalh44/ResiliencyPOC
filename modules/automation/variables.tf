@@ -34,10 +34,34 @@ variable "sql_mi_id" {
   default     = ""
 }
 
+variable "enable_sql_mi_role" {
+  description = "Enable SQL MI role assignment (set to true when SQL MI is deployed)"
+  type        = bool
+  default     = false
+}
+
 variable "redis_cache_id" {
   description = "Resource ID of the Redis Cache for role assignment"
   type        = string
   default     = ""
+}
+
+variable "enable_redis_role" {
+  description = "Enable Redis role assignment (set to true when Redis is deployed)"
+  type        = bool
+  default     = false
+}
+
+variable "enable_secondary_rg_role" {
+  description = "Enable secondary resource group role assignment"
+  type        = bool
+  default     = true
+}
+
+variable "enable_diagnostics" {
+  description = "Enable diagnostic settings for Automation Account"
+  type        = bool
+  default     = true
 }
 
 variable "runbook_name" {
