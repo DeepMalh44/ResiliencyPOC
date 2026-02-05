@@ -118,15 +118,18 @@ The DR action group includes:
 In `environments/prod/terraform.tfvars`:
 
 ```hcl
-# Enable the automation module
+# Enable the automation module and DR alerts
 enable_automated_failover = true
 
-# Your subscription ID (required for activity log alerts)
-subscription_id = "your-subscription-id"
-
-# Email addresses for alerts
+# Email addresses for alert notifications
 alert_email_addresses = ["ops-team@company.com", "dba@company.com"]
 ```
+
+> **Important**: When `enable_automated_failover = true`, Terraform creates:
+> - Automation Account with Managed Identity
+> - DR Failover Runbook with Webhook
+> - 8 DR Alerts linked to the webhook
+> - Action Group with email + webhook receivers
 
 ### 2. Update Runbook Configuration
 
@@ -134,8 +137,8 @@ The runbook uses a naming convention matching Terraform locals. Update `defaultC
 
 ```powershell
 $defaultConfig = @{
-    ProjectName = "pocapp2"      # Match var.project_name
-    Environment = "prod"          # Match var.environment
+    ProjectName = "pocapp6"      # Match var.project_name in terraform.tfvars
+    Environment = "prod"          # Match var.environment in terraform.tfvars
     
     PrimaryRegion      = "eastus2"
     PrimaryRegionShort = "eus2"
@@ -145,16 +148,19 @@ $defaultConfig = @{
 }
 ```
 
+> **Note**: Update `ProjectName` to match your `project_name` variable in terraform.tfvars
+
 ### 3. Resource Naming Convention
 
 The runbook builds resource names using this pattern:
 
-| Resource | Naming Pattern | Example |
-|----------|---------------|---------|
-| Resource Group | `rg-{project}-{env}-{region}` | `rg-pocapp2-prod-eus2` |
-| SQL MI | `sqlmi-{project}-{env}-{region}` | `sqlmi-pocapp2-prod-eus2` |
-| Failover Group | `fog-{project}-sqlmi-{env}` | `fog-pocapp2-sqlmi-prod` |
-| Redis | `redis-{project}-{env}-{region}` | `redis-pocapp2-prod-eus2` |
+| Resource | Naming Pattern | Example (pocapp6) |
+|----------|---------------|-------------------|
+| Resource Group | `rg-{project}-{env}-{region}` | `rg-pocapp6-prod-eus2` |
+| SQL MI | `sqlmi-{project}-{env}-{region}` | `sqlmi-pocapp6-prod-eus2` |
+| Failover Group | `fog-{project}-{env}` | `fog-pocapp6-prod` |
+| Redis | `redis-{project}-{env}-{region}` | `redis-pocapp6-prod-eus2` |
+| Automation Account | `aa-{project}-{env}-dr` | `aa-pocapp6-prod-dr` |
 
 ## Deployment
 
@@ -186,18 +192,31 @@ terraform apply
 ```powershell
 # Check Automation Account
 az automation account show \
-  --name "aa-pocapp2-prod-dr" \
-  --resource-group "rg-pocapp2-prod-eus2"
+  --name "aa-pocapp6-prod-dr" \
+  --resource-group "rg-pocapp6-prod-eus2"
 
 # List runbooks
 az automation runbook list \
-  --automation-account-name "aa-pocapp2-prod-dr" \
-  --resource-group "rg-pocapp2-prod-eus2" \
+  --automation-account-name "aa-pocapp6-prod-dr" \
+  --resource-group "rg-pocapp6-prod-eus2" \
   -o table
 
-# Check role assignments
+# Verify DR alerts exist
+az monitor metrics alert list \
+  --resource-group "rg-pocapp6-prod-eus2" \
+  --query "[?contains(name, 'alert-')].{Name:name, Severity:severity, Enabled:enabled}" \
+  -o table
+
+# Check action group has webhook
+az monitor action-group show \
+  --name "ag-dr-failover-pocapp6-prod" \
+  --resource-group "rg-pocapp6-prod-eus2" \
+  --query "{Name:name, Webhooks:webhookReceivers[].name, Emails:emailReceivers[].emailAddress}" \
+  -o json
+
+# Check role assignments for Automation identity
 az role assignment list \
-  --assignee $(az automation account show --name "aa-pocapp2-prod-dr" --resource-group "rg-pocapp2-prod-eus2" --query identity.principalId -o tsv) \
+  --assignee $(az automation account show --name "aa-pocapp6-prod-dr" --resource-group "rg-pocapp6-prod-eus2" --query identity.principalId -o tsv) \
   -o table
 ```
 
@@ -208,15 +227,15 @@ az role assignment list \
 ```powershell
 # Start runbook with Manual failover type
 az automation runbook start \
-  --automation-account-name "aa-pocapp2-prod-dr" \
-  --resource-group "rg-pocapp2-prod-eus2" \
+  --automation-account-name "aa-pocapp6-prod-dr" \
+  --resource-group "rg-pocapp6-prod-eus2" \
   --name "Invoke-DRFailover" \
   --parameters FailoverType=Manual
 
 # Check job status
 az automation job list \
-  --automation-account-name "aa-pocapp2-prod-dr" \
-  --resource-group "rg-pocapp2-prod-eus2" \
+  --automation-account-name "aa-pocapp6-prod-dr" \
+  --resource-group "rg-pocapp6-prod-eus2" \
   -o table
 ```
 
@@ -272,15 +291,15 @@ Invoke-RestMethod -Uri $webhookUri -Method Post -Body $alertPayload -ContentType
 ```powershell
 # Get recent jobs
 $jobs = az automation job list \
-  --automation-account-name "aa-pocapp2-prod-dr" \
-  --resource-group "rg-pocapp2-prod-eus2" \
+  --automation-account-name "aa-pocapp6-prod-dr" \
+  --resource-group "rg-pocapp6-prod-eus2" \
   --query "[?status=='Completed' || status=='Failed'].{Name:runbook.name, Status:status, StartTime:startTime}" \
   -o json | ConvertFrom-Json
 
 # Get job output
 az automation job-stream list \
-  --automation-account-name "aa-pocapp2-prod-dr" \
-  --resource-group "rg-pocapp2-prod-eus2" \
+  --automation-account-name "aa-pocapp6-prod-dr" \
+  --resource-group "rg-pocapp6-prod-eus2" \
   --job-name $jobs[0].Name \
   -o table
 ```
@@ -290,8 +309,8 @@ az automation job-stream list \
 ```powershell
 # Get Automation Account's managed identity principal ID
 $principalId = az automation account show \
-  --name "aa-pocapp2-prod-dr" \
-  --resource-group "rg-pocapp2-prod-eus2" \
+  --name "aa-pocapp6-prod-dr" \
+  --resource-group "rg-pocapp6-prod-eus2" \
   --query "identity.principalId" -o tsv
 
 # List all role assignments for this identity
@@ -306,13 +325,21 @@ This project includes **both** manual and automated failover capabilities:
 
 Located in the root `dr-drill-runbook/` folder:
 - **Purpose**: Scheduled DR testing and controlled failover exercises
-- **Execution**: Run locally or from Azure Cloud Shell
+- **Execution**: Run locally from PowerShell
 - **Scripts**:
-  - `01-PreDrillValidation.ps1` - Validate environment before drill
-  - `02-InitiateFailover.ps1` - Execute failover operations
-  - `03-ValidateFailover.ps1` - Verify failover success
-  - `04-InitiateFailback.ps1` - Return to primary region
-  - `05-PostDrillReport.ps1` - Generate drill summary
+  - `00-Setup-Environment.ps1` - Configure environment variables for drill
+  - `01-Check-Health.ps1` - Verify all resources are healthy before drill
+  - `02-AppService-Failover.ps1` - Failover/failback App Service via Front Door
+  - `03-SQLMI-Failover.ps1` - Failover/failback SQL MI Failover Group
+  - `04-Redis-Failover.ps1` - Failover/failback Redis geo-replication
+  - `05-FullRegion-Failover.ps1` - Full regional failover
+  - `06-Failback-All.ps1` - Restore to primary region
+
+**Tested RTO Results (pocapp6):**
+| Component | Failover RTO | Failback Time |
+|-----------|--------------|---------------|
+| App Service | 106.6 sec | 144.5 sec |
+| SQL MI | 35.7 sec | ~30 sec |
 
 ### Automated Failover (`modules/automation/`)
 
