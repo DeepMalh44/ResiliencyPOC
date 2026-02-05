@@ -56,8 +56,8 @@ if ($Failover) {
     $primaryOrigin = az afd origin show `
         --profile-name $Global:DrDrill.FrontDoor.Name `
         --resource-group $Global:DrDrill.FrontDoor.ResourceGroup `
-        --origin-group-name $Global:DrDrill.FrontDoor.OriginGroup `
-        --origin-name "primary-appservice" `
+        --origin-group-name $Global:DrDrill.FrontDoor.WebAppOriginGroup `
+        --origin-name $Global:DrDrill.FrontDoor.PrimaryOrigin `
         --query "enabledState" -o tsv 2>$null
 
     Write-Host "║   Primary Origin: $primaryOrigin".PadRight($width + 1) + "║"
@@ -70,8 +70,8 @@ if ($Failover) {
     az afd origin update `
         --profile-name $Global:DrDrill.FrontDoor.Name `
         --resource-group $Global:DrDrill.FrontDoor.ResourceGroup `
-        --origin-group-name $Global:DrDrill.FrontDoor.OriginGroup `
-        --origin-name "primary-appservice" `
+        --origin-group-name $Global:DrDrill.FrontDoor.WebAppOriginGroup `
+        --origin-name $Global:DrDrill.FrontDoor.PrimaryOrigin `
         --enabled-state Disabled `
         --output none
 
@@ -118,8 +118,8 @@ if ($Failover) {
     az afd origin update `
         --profile-name $Global:DrDrill.FrontDoor.Name `
         --resource-group $Global:DrDrill.FrontDoor.ResourceGroup `
-        --origin-group-name $Global:DrDrill.FrontDoor.OriginGroup `
-        --origin-name "primary-appservice" `
+        --origin-group-name $Global:DrDrill.FrontDoor.WebAppOriginGroup `
+        --origin-name $Global:DrDrill.FrontDoor.PrimaryOrigin `
         --enabled-state Enabled `
         --output none
 
@@ -140,15 +140,15 @@ if ($Failover) {
     $primaryState = az afd origin show `
         --profile-name $Global:DrDrill.FrontDoor.Name `
         --resource-group $Global:DrDrill.FrontDoor.ResourceGroup `
-        --origin-group-name $Global:DrDrill.FrontDoor.OriginGroup `
-        --origin-name "primary-appservice" `
+        --origin-group-name $Global:DrDrill.FrontDoor.WebAppOriginGroup `
+        --origin-name $Global:DrDrill.FrontDoor.PrimaryOrigin `
         --query "enabledState" -o tsv 2>$null
 
     $secondaryState = az afd origin show `
         --profile-name $Global:DrDrill.FrontDoor.Name `
         --resource-group $Global:DrDrill.FrontDoor.ResourceGroup `
-        --origin-group-name $Global:DrDrill.FrontDoor.OriginGroup `
-        --origin-name "secondary-appservice" `
+        --origin-group-name $Global:DrDrill.FrontDoor.WebAppOriginGroup `
+        --origin-name $Global:DrDrill.FrontDoor.SecondaryOrigin `
         --query "enabledState" -o tsv 2>$null
 
     Write-Host "║   Primary Origin:   $primaryState".PadRight(55) + "✅   ║" -ForegroundColor Green

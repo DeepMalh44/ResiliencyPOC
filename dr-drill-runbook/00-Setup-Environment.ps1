@@ -48,7 +48,11 @@ $Global:DrDrill = @{
         Name             = "fd-pocapp6-prod"
         ResourceGroup    = "rg-pocapp6-prod-eus2"
         Endpoint         = "fd-pocapp6-prod.azurefd.net"
-        OriginGroup      = "default-origin-group"
+        WebAppOriginGroup = "og-webapp"
+        FunctionOriginGroup = "og-functions"
+        ApiOriginGroup   = "og-api"
+        PrimaryOrigin    = "origin-webapp-primary"
+        SecondaryOrigin  = "origin-webapp-secondary"
     }
     
     # Timing
