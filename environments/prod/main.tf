@@ -236,29 +236,17 @@ module "monitoring" {
     }
   }
 
-  # DR Alerts Configuration (populated after automation module is created)
-  enable_dr_alerts = var.enable_automated_failover
+  # DR Alerts - Initially disabled, will be enabled by dr_monitoring module after automation is created
+  enable_dr_alerts = false
 
-  dr_alert_email_receivers = [
-    for email in var.alert_email_addresses : {
-      name          = replace(email, "@", "-at-")
-      email_address = email
-    }
-  ]
-
-  # Note: Webhook URI will be empty on first apply before automation module exists
-  # This is handled by the conditional in the monitoring module
-  dr_webhook_uri = ""
-
-  subscription_id = "/subscriptions/${var.subscription_id}"
-
-  # Resource IDs for DR monitoring - these will be empty initially
+  dr_alert_email_receivers = []
+  dr_webhook_uri           = ""
+  subscription_id          = ""
   sql_mi_resource_id       = ""
   app_service_resource_ids = []
   redis_cache_resource_id  = ""
   front_door_resource_id   = ""
-
-  dr_monitored_regions = ["East US 2", "Central US"]
+  dr_monitored_regions     = []
 
   tags = local.common_tags
 }
@@ -1140,41 +1128,69 @@ module "automation" {
 # Update Monitoring Module with DR Alerts
 #--------------------------------------------------------------
 
-# Note: The monitoring module already exists above. 
-# Add these DR-specific configurations to the module call above,
-# or use a separate monitoring_dr module if needed.
-
-# For now, we'll add a locals block to define DR alert resources
-# that can be passed to the monitoring module
-
-locals {
-  # DR Alert Configuration
-  dr_alert_config = {
-    enable_dr_alerts = var.enable_automated_failover
-
-    dr_alert_email_receivers = [
-      for email in var.alert_email_addresses : {
-        name          = replace(email, "@", "-at-")
-        email_address = email
-      }
-    ]
-
-    # Webhook URI from automation module
-    dr_webhook_uri = var.enable_automated_failover ? module.automation[0].webhook_uri : ""
-
-    # Subscription ID for activity log alerts
-    subscription_id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}"
-
-    # Resource IDs for monitoring (conditionally populated)
-    sql_mi_resource_id       = var.enable_sql_mi ? module.sql_mi_primary[0].id : ""
-    app_service_resource_ids = [module.app_service_primary.id]
-    redis_cache_resource_id  = var.enable_redis ? module.redis_primary.redis_cache_id : ""
-    front_door_resource_id   = var.enable_front_door ? module.front_door.front_door_profile_id : ""
-
-    # Monitored regions
-    dr_monitored_regions = [local.regions.primary.name, local.regions.secondary.name]
-  }
-}
-
 # Data source for subscription info
 data "azurerm_subscription" "current" {}
+
+#--------------------------------------------------------------
+# DR Monitoring Module - Created AFTER all resources exist
+# This module creates the DR alerts with proper webhook integration
+#--------------------------------------------------------------
+
+module "dr_monitoring" {
+  source = "../../modules/monitoring"
+  count  = var.enable_automated_failover ? 1 : 0
+
+  log_analytics_name  = "${local.law_names.primary}-dr"
+  resource_group_name = module.resource_group_primary.name
+  location            = local.regions.primary.name
+  retention_in_days   = var.log_analytics_retention_days
+
+  # No Application Insights needed - just DR alerts
+  application_insights = {}
+  action_groups        = {}
+  metric_alerts        = {}
+
+  # DR Alerts Configuration - NOW WITH ACTUAL VALUES
+  enable_dr_alerts = true
+
+  dr_action_group_name = "ag-dr-failover-${var.project_name}-${var.environment}"
+
+  dr_alert_email_receivers = [
+    for email in var.alert_email_addresses : {
+      name          = replace(email, "@", "-at-")
+      email_address = email
+    }
+  ]
+
+  # Webhook URI from automation module - THIS IS THE KEY FIX
+  dr_webhook_uri = module.automation[0].webhook_uri
+
+  # Automation account details for runbook receiver
+  dr_automation_account_id = module.automation[0].automation_account_id
+  dr_runbook_name          = module.automation[0].runbook_name
+  dr_webhook_resource_id   = "" # Not needed when using webhook_uri
+
+  # Subscription ID for activity log alerts
+  subscription_id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}"
+
+  # Resource IDs for monitoring - NOW POPULATED WITH ACTUAL RESOURCES
+  sql_mi_resource_id       = var.enable_sql_mi ? module.sql_mi_primary[0].id : ""
+  app_service_resource_ids = [module.app_service_primary.id]
+  redis_cache_resource_id  = var.enable_redis ? module.redis_primary[0].redis_cache_id : ""
+  front_door_resource_id   = module.front_door.front_door_profile_id
+
+  # Monitored regions
+  dr_monitored_regions = ["East US 2", "Central US"]
+
+  tags = merge(local.common_tags, {
+    "Purpose" = "DR-Monitoring"
+  })
+
+  depends_on = [
+    module.automation,
+    module.sql_mi_primary,
+    module.app_service_primary,
+    module.redis_primary,
+    module.front_door
+  ]
+}
